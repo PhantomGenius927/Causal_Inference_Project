@@ -151,19 +151,6 @@ demo <- dyadyrs %>%
     treatyr = min(treatyr, na.rm = TRUE)
   )
 
-ggplot(dyadyrs, aes(x = year, fill = regcha_uni)) +
-  geom_bar(position = "stack")
-
-anova <- lm(cowmidonset ~ regcha_uni, data = dyadyrs)
-summary(anova)
-
-tukey_test <- emmeans::emmeans(anova, pairwise ~ regcha_uni)
-tukey_test <- as.data.frame(tukey_test)
-ggplot(tukey_test, aes(x = regcha_uni, y = emmean, ymin = lower.CL, ymax = upper.CL)) + 
-  geom_pointrange()
-
-
-lmemodel <- lmer(cowmidonset)
 ```
 ## Effect Size
 ```{r Effect Size}
