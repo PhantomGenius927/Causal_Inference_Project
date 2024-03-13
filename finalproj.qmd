@@ -14,6 +14,7 @@ library(fixest)
 library(peacesciencer)
 library(ggplot2)
 library(tidyverse)
+library(did)
 ```
 ##Data Wrangling
 ```{r Data Wrangling}
@@ -140,7 +141,7 @@ dyadyrs <- dyadyrs %>%
 
 # Treatment Year
 ```{r Treatment Year}
-## min treated year
+## treated year with single and multi-entry year
 dyadyrs <- dyadyrs %>%
   group_by(id) %>%
   mutate(
@@ -152,6 +153,16 @@ dyadyrs <- dyadyrs %>%
   ungroup() %>%
   select(-regchayr)
 
+## unique cases id for multi-entry year dyads
+dyadyrs <- dyadyrs %>%
+  mutate(
+    case_id = row_number()
+  ) %>%
+  group_by(id, treatyr_multi) %>%
+  mutate(
+    case_id = min(case_id, na.rm = TRUE)
+  ) %>%
+  ungroup()
 ```
 ## Effect Size
 ```{r Effect Size}
@@ -165,9 +176,63 @@ plot(mde)
 ```
 ## Parallel Trend Analysis
 ```{r Parallel Trend Analysis}
-trend_dyadyrs <- dyadyrs %>%
-  group_by(year, id)
+# multi-entry 
+demo <- dyadyrs %>%
+  group_by(case_id) %>%
+  mutate(
+    mid = cowmidonset - lag(cowmidonset) # try n = 5
+  ) %>%
+  summarise(
+    avg_mid = mean(mid, na.rm = TRUE),
+    treatyr_multi = unique(treatyr_multi)
+  )
+
+idk <- feols(treatyr_multi ~ avg_mid, data = demo)
+etable(idk)
+
+ggplot(demo, aes(x = treatyr_multi)) +
+  geom_smooth(aes(y = avg_mid), se = TRUE)
+
+# single entry
+demo2 <- dyadyrs %>%
+  group_by(id) %>%
+  mutate(
+    mid = cowmidonset - lag(cowmidonset)
+  ) %>%
+  summarise(
+    avg_mid = mean(mid, na.rm = TRUE),
+    treatyr_sing = unique(treatyr_sing)
+  )
+
+idk2 <- feols(treatyr_sing ~ avg_mid, data = demo2)
+etable(idk2)
+
+ggplot(demo2, aes(x = treatyr_sing)) +
+  geom_smooth(aes(y = avg_mid), se = TRUE)
+
 ```
+
+## Event Study
+```{r Event Study}
+# tau
+demo3 <- dyadyrs %>%
+  mutate(
+    tau = year - treatyr_sing,
+  )
+  
+dead <- aggregate(cowmidonset ~ tau, demo3, mean)
+subsetdead <- dead[dead$tau <= 5 & dead$tau >= -5, ]
+
+ggplot(subsetdead, aes(x = tau)) +
+  geom_line(aes(y = cowmidonset)) + 
+  geom_vline(xintercept = 0)
+
+reg <- feols(cowmidonset ~ factor(tau) | id+year, cluster = c("year", "id"), data = filter(demo3, abs(tau) < 10))
+regdat <- as_tibble(reg$coeftable)
+ggplot(regdat, aes(x = tau, y = Est)) +
+  geom_point()
+```
+
 
 ## Statistical Analysis
 ```{r Statistical Analysis}
