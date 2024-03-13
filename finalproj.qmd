@@ -147,12 +147,21 @@ mde <- pwr::pwr.t.test(n = n_distinct(dyadyrs)/2, d = NULL,
                        type="two.sample", alternative="two.sided")
 plot(mde)
 ```
+```{r Parallel Trend Analysis}
+
+```
+
 
 ```{r Statistical Calculation}
 
-covariates <- c("cow_defense", "cow_neutral", "cow_nonagg", "cow_entente", "major", "ongoingrivalry", "gdppc_dyd", "trade_dyd", "nmc_dyd")
+covariates <- c("cow_defense", "cow_neutral", "cow_nonagg", "cow_entente", 
+                "major", "ongoingrivalry", 
+                "gdppc_dyd", "trade_dyd", "nmc_dyd")
 
-media_test <- feols(c(cow_defense, cow_neutral, cow_nonagg, cow_entente, major, ongoingrivalry, gdppc_dyd, trade_dyd, nmc_dyd) ~ regcha_uni | year + ccode1 + ccode2, data = dyadyrs)
+media_test <- feols(c(cow_defense, cow_neutral, cow_nonagg, cow_entente, 
+                      major, ongoingrivalry, 
+                      gdppc_dyd, trade_dyd, nmc_dyd) ~ regcha_uni | 
+                      year + ccode1 + ccode2, data = dyadyrs)
 etable(media_test)
 
 
