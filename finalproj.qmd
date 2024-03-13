@@ -15,7 +15,7 @@ library(peacesciencer)
 library(ggplot2)
 library(tidyverse)
 ```
-
+##Data Wrangling
 ```{r Data Wrangling}
 ids <- c("ccode1", "ccode2", "country1", "country2", "year")
 
@@ -138,6 +138,34 @@ dyadyrs <- dyadyrs %>%
   )
 ```
 
+# Treatment Year
+```{r Treatment Year}
+
+## treated year
+demo <- dyadyrs %>%
+  mutate(
+    treatyr = ifelse(regcha_uni == 1, year, NA)
+  ) %>%
+  group_by(ccode1, ccode2, year) %>%
+  mutate(
+    treatyr = min(treatyr, na.rm = TRUE)
+  )
+
+ggplot(dyadyrs, aes(x = year, fill = regcha_uni)) +
+  geom_bar(position = "stack")
+
+anova <- lm(cowmidonset ~ regcha_uni, data = dyadyrs)
+summary(anova)
+
+tukey_test <- emmeans::emmeans(anova, pairwise ~ regcha_uni)
+tukey_test <- as.data.frame(tukey_test)
+ggplot(tukey_test, aes(x = regcha_uni, y = emmean, ymin = lower.CL, ymax = upper.CL)) + 
+  geom_pointrange()
+
+
+lmemodel <- lmer(cowmidonset)
+```
+## Effect Size
 ```{r Effect Size}
 ees <- feols(cowmidonset ~ regcha_uni | year + ccode1 + ccode2, data = dyadyrs)
 etable(ees, file = here::here("ees.tex"))
@@ -147,12 +175,14 @@ mde <- pwr::pwr.t.test(n = n_distinct(dyadyrs)/2, d = NULL,
                        type="two.sample", alternative="two.sided")
 plot(mde)
 ```
+## Parallel Trend Analysis
 ```{r Parallel Trend Analysis}
-
+trend_dyadyrs <- dyadyrs %>%
+  group_by(year, id)
 ```
 
-
-```{r Statistical Calculation}
+## Statistical Analysis
+```{r Statistical Analysis}
 
 covariates <- c("cow_defense", "cow_neutral", "cow_nonagg", "cow_entente", 
                 "major", "ongoingrivalry", 
