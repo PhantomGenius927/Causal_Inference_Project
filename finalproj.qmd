@@ -3,7 +3,7 @@ title: "Final Project"
 author: "Edison Hu"
 format: pdf
 editor: visual
-date: \today
+date: (\today)
 execute: 
   warning: false
   message: false
