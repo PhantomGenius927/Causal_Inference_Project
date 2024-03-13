@@ -1,0 +1,193 @@
+---
+title: "Final Project"
+author: "Edison Hu"
+format: pdf
+editor: visual
+date: \today
+execute: 
+  warning: false
+  message: false
+---
+
+```{r, echo=FALSE}
+library(fixest)
+library(peacesciencer)
+library(ggplot2)
+library(tidyverse)
+```
+
+```{r Data Wrangling}
+ids <- c("ccode1", "ccode2", "country1", "country2", "year")
+
+# Outcome Variable
+## MID onsets
+dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1816:2014)) %>%
+  add_cow_mids() %>%
+  mutate(
+    country1 = countrycode::countrycode(ccode1, 
+                                        origin = "cown", destination = "iso3c"),
+    country2 = countrycode::countrycode(ccode2, 
+                                        origin = "cown", destination = "iso3c")  
+    ) %>%
+  select(all_of(ids), cowmidonset)
+
+# Explanatory Variable
+## regime change
+polityIV <- readxl::read_xls(here::here("raw data/p4v2018.xls"))
+polityIV <- polityIV %>%
+  select(ccode, year, durable) %>%
+  mutate(ccode2 = ccode) %>%
+  rename(ccode1 = ccode)
+
+dyadyrs <- left_join(dyadyrs, polityIV, by = c("ccode1", "year"))
+dyadyrs <- dyadyrs %>%
+  select(-ccode2.y) %>%
+  rename(durable1 = durable,
+         ccode2 = ccode2.x)
+dyadyrs <- left_join(dyadyrs, polityIV, by = c("ccode2", "year"))
+dyadyrs <- dyadyrs %>%
+  select(-ccode1.y) %>%
+  rename(durable2 = durable,
+         ccode1 = ccode1.x)
+
+dyadyrs <- dyadyrs %>%
+  mutate(
+    regcha1 = ifelse(durable1 == 0, 1, 0),
+    regcha2 = ifelse(durable2 == 0, 1, 0),
+    regcha_uni = ifelse(regcha1 == 1 | regcha2 == 1, 1, 0)
+    #regcha_bi = ifelse(regcha1 == 1 & regcha2 == 1, 1, 0)
+    ) %>%
+  select(all_of(ids), cowmidonset, regcha_uni)
+
+## foreign policy similarity
+dyadyrs <- dyadyrs %>%
+  add_fpsim() %>%
+  select(all_of(ids), cowmidonset, regcha_uni, piva, kappava)
+
+# Covariates
+## alliance
+dyadyrs <- dyadyrs %>%
+  add_cow_alliance()
+
+## major power
+dyadyrs <- dyadyrs %>%
+  add_cow_majors() %>%
+  mutate(major = ifelse(cowmaj1 == 1 | cowmaj2 == 1, 1, 0)) %>%
+  select(-c(cowmaj1, cowmaj2))
+
+## strategic rivalry
+v_ids <- names(dyadyrs)
+dyadyrs <- dyadyrs %>%
+  add_strategic_rivalries() %>%
+  select(all_of(v_ids), ongoingrivalry)
+
+## distance
+dyadyrs <- dyadyrs %>%
+  add_minimum_distance()
+
+## GDP per capita & Trade
+v_ids <- names(dyadyrs)
+dyadyrs <- dyadyrs %>%
+  add_sdp_gdp() %>%
+  add_cow_trade() %>%
+  mutate(
+    gdppc = abs(wbgdppc2011est1 - wbgdppc2011est2),
+    trade = abs(flow1 - flow2)
+  ) %>%
+  group_by(year) %>%
+  mutate(
+    gdppc_dyd = (gdppc - mean(gdppc, na.rm = TRUE)) / sd(gdppc, na.rm = TRUE),
+    trade_dyd = (trade - mean(trade, na.rm = TRUE)) / sd(trade, na.rm = TRUE)
+  ) %>%
+  ungroup() 
+dyadyrs <- dyadyrs %>%
+  select(all_of(v_ids), gdppc_dyd, trade_dyd)
+  
+## NMC ratio
+v_ids <- names(dyadyrs)
+nmc_sy <- cow_nmc %>%
+  group_by(year) %>%
+  mutate(
+    nc = cinc / sum(cinc)
+    ) %>%
+  ungroup() %>%
+  rename(ccode1 = ccode,
+         nc1 = nc) %>%
+  select(ccode1, year, nc1)
+dyadyrs <- left_join(dyadyrs, nmc_sy, by = c("ccode1", "year"))
+
+nmc_sy <- nmc_sy %>%
+  rename(ccode2 = ccode1,
+         nc2 = nc1)
+dyadyrs <- left_join(dyadyrs, nmc_sy, by = c("ccode2", "year"))
+dyadyrs <- dyadyrs %>%
+  mutate(
+    nc = abs(nc1 - nc2)
+    ) %>%
+  group_by(year) %>%
+  mutate(
+    nmc_dyd = (nc - mean(nc, na.rm = TRUE)) / sd(nc, na.rm = TRUE)
+    ) %>%
+  ungroup() %>%
+  select(all_of(v_ids), nmc_dyd)
+
+## create unique id
+dyadyrs <- dyadyrs %>%
+  mutate(
+    id = paste(ccode1, ccode2, sep = "0")
+  )
+```
+
+```{r Effect Size}
+ees <- feols(cowmidonset ~ regcha_uni | year + ccode1 + ccode2, data = dyadyrs)
+etable(ees, file = here::here("ees.tex"))
+
+mde <- pwr::pwr.t.test(n = n_distinct(dyadyrs)/2, d = NULL, 
+                       sig.level = 0.05, power = 0.8, 
+                       type="two.sample", alternative="two.sided")
+plot(mde)
+```
+
+```{r Statistical Calculation}
+
+covariates <- c("cow_defense", "cow_neutral", "cow_nonagg", "cow_entente", "major", "ongoingrivalry", "gdppc_dyd", "trade_dyd", "nmc_dyd")
+
+media_test <- feols(c(cow_defense, cow_neutral, cow_nonagg, cow_entente, major, ongoingrivalry, gdppc_dyd, trade_dyd, nmc_dyd) ~ regcha_uni | year + ccode1 + ccode2, data = dyadyrs)
+etable(media_test)
+
+
+m <- feols(cowmidonset ~ regcha_uni + regcha_uni:piva + regcha_uni:ongoingrivalry +
+              cow_defense + cow_neutral + cow_nonagg + cow_entente +
+              regcha_uni:major + 
+              regcha_uni:mindist + I(mindist^2) +
+              trade_dyd + gdppc_dyd + nmc_dyd,
+           data = dyadyrs)
+
+
+m1 <- feols(cowmidonset ~ regcha_uni + regcha_uni:ongoingrivalry | 
+              ccode1 + ccode2 + year, data = dyadyrs)
+
+m2 <- feols(cowmidonset ~ regcha_uni  + regcha_uni:ongoingrivalry | 
+              ccode1 + ccode2 + year, cluster = c("year", "id"), data = dyadyrs)
+
+m3 <- feols(cowmidonset ~ regcha_uni + regcha_uni:ongoingrivalry +
+              cow_defense + cow_neutral + cow_nonagg + cow_entente +
+              regcha_uni:major + 
+              regcha_uni:mindist + I(mindist^2) +
+              trade_dyd + gdppc_dyd + nmc_dyd | 
+              ccode1 + ccode2 + year, 
+            cluster = c("year", "id"), data = dyadyrs)
+
+m4 <- feols(cowmidonset ~ regcha_uni  + regcha_uni:piva | 
+              ccode1 + ccode2 + year, cluster = c("year", "id"), data = dyadyrs)
+
+m5 <- feols(cowmidonset ~ regcha_uni + regcha_uni:piva + regcha_uni:ongoingrivalry +
+              cow_defense + cow_neutral + cow_nonagg + cow_entente +
+              regcha_uni:major + 
+              regcha_uni:mindist + I(mindist^2) +
+              trade_dyd + gdppc_dyd + nmc_dyd | 
+              ccode1 + ccode2 + year, 
+            cluster = c("year", "id"), data = dyadyrs)
+
+etable(m, m1, m4, m2, m3, m5)
+```
