@@ -140,16 +140,17 @@ dyadyrs <- dyadyrs %>%
 
 # Treatment Year
 ```{r Treatment Year}
-
-## treated year
-demo <- dyadyrs %>%
+## min treated year
+dyadyrs <- dyadyrs %>%
+  group_by(id) %>%
   mutate(
-    treatyr = ifelse(regcha_uni == 1, year, NA)
+    regchayr = ifelse(regcha_uni == 1, year, NA),
+    treatyr_sing = min(regchayr, na.rm = TRUE),
+    treatyr_multi = regchayr
   ) %>%
-  group_by(ccode1, ccode2, year) %>%
-  mutate(
-    treatyr = min(treatyr, na.rm = TRUE)
-  )
+  fill(treatyr_multi, .direction = "down") %>%
+  ungroup() %>%
+  select(-regchayr)
 
 ```
 ## Effect Size
