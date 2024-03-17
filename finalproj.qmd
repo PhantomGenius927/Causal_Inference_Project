@@ -16,13 +16,15 @@ library(ggplot2)
 library(tidyverse)
 library(did)
 ```
+
 ##Data Wrangling
+
 ```{r Data Wrangling}
 ids <- c("ccode1", "ccode2", "country1", "country2", "year")
 
 # Outcome Variable
 ## MID onsets
-dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1816:2014)) %>%
+dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1946:2014)) %>%
   add_cow_mids() %>%
   mutate(
     country1 = countrycode::countrycode(ccode1, 
@@ -140,6 +142,7 @@ dyadyrs <- dyadyrs %>%
 ```
 
 # Treatment Year
+
 ```{r Treatment Year}
 ## treated year with single and multi-entry year
 dyadyrs <- dyadyrs %>%
@@ -164,7 +167,21 @@ dyadyrs <- dyadyrs %>%
   ) %>%
   ungroup()
 ```
+## Descriptive Analysis
+```{r}
+da <- dyadyrs %>%
+  group_by(year) %>%
+  summarise(
+    onset = sum(cowmidonset, na.rm = TRUE),
+    regime = sum(regcha_uni, na.rm = TRUE)
+    
+  )
+
+Hmisc::describe(da, exclude.missing = TRUE, digits = 4, trans = NULL)
+```
+
 ## Effect Size
+
 ```{r Effect Size}
 ees <- feols(cowmidonset ~ regcha_uni | year + ccode1 + ccode2, data = dyadyrs)
 etable(ees, file = here::here("ees.tex"))
@@ -174,7 +191,9 @@ mde <- pwr::pwr.t.test(n = n_distinct(dyadyrs)/2, d = NULL,
                        type="two.sample", alternative="two.sided")
 plot(mde)
 ```
+
 ## Parallel Trend Analysis
+
 ```{r Parallel Trend Analysis}
 # multi-entry 
 demo <- dyadyrs %>%
@@ -213,6 +232,7 @@ ggplot(demo2, aes(x = treatyr_sing)) +
 ```
 
 ## Event Study
+
 ```{r Event Study}
 # tau
 demo3 <- dyadyrs %>%
@@ -233,8 +253,8 @@ ggplot(regdat, aes(x = tau, y = Est)) +
   geom_point()
 ```
 
-
 ## Statistical Analysis
+
 ```{r Statistical Analysis}
 
 covariates <- c("cow_defense", "cow_neutral", "cow_nonagg", "cow_entente", 
