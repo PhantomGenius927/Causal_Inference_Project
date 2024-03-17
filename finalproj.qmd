@@ -208,7 +208,7 @@ ggplot(data = da) +
     x = "Year",
     y = "Numbers of Onsets"
   ) + 
-  ggthemes::theme_clean(base_size = 12)
+  ggthemes::theme_clean(base_size = 10)
 ggsave(filename = "onset.png", device = "png", 
         dpi = 300, limitsize = FALSE)
 
@@ -218,8 +218,7 @@ ggplot(data = da) +
     title = "Numbers of Dyad's with Regime Change From 1946 to 2014",
     x = "Year",
     y = "Numbers of Dyadic Regime Change"
-  ) + 
-  stevemisc::theme_steve_ms(base_size = 12)
+  ) + ggthemes::theme_clean(base_size = 10)
 ggsave(filename = "regime.png", device = "png", 
         dpi = 300, limitsize = FALSE)
 ```
@@ -270,9 +269,8 @@ demo2 <- dyadyrs %>%
 idk2 <- feols(treatyr ~ avg_mid, data = demo2)
 etable(idk2)
 
-ggplot(demo2, aes(x = treatyr)) +
-  geom_smooth(aes(y = avg_mid), method = "lm", se = TRUE) + 
-  stevemisc::theme_steve_ms()
+ggplot(demo2, aes(x = treatyr, y = avg_mid)) +
+  geom_smooth(method = "lm", se = TRUE) + ggthemes::theme_clean(base_size = 10)
 ggsave(filename = "paratrend.png", device = "png", limitsize = FALSE, dpi = 300)
 ```
 
