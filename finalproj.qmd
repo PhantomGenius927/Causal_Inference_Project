@@ -104,7 +104,7 @@ dyadyrs <- dyadyrs %>%
   ) %>%
   ungroup() 
 dyadyrs <- dyadyrs %>%
-  select(all_of(v_ids), gdppc_dyd, trade_dyd)
+  select(all_of(v_ids), gdppc, gdppc_dyd, trade, trade_dyd)
   
 ## NMC ratio
 v_ids <- names(dyadyrs)
@@ -132,7 +132,7 @@ dyadyrs <- dyadyrs %>%
     nmc_dyd = (nc - mean(nc, na.rm = TRUE)) / sd(nc, na.rm = TRUE)
     ) %>%
   ungroup() %>%
-  select(all_of(v_ids), nmc_dyd)
+  select(all_of(v_ids), nc, nmc_dyd)
 
 ## create unique id
 dyadyrs <- dyadyrs %>%
@@ -149,23 +149,32 @@ dyadyrs <- dyadyrs %>%
   group_by(id) %>%
   mutate(
     regchayr = ifelse(regcha_uni == 1, year, NA),
-    treatyr_sing = min(regchayr, na.rm = TRUE),
-    treatyr_multi = regchayr
-  ) %>%
-  fill(treatyr_multi, .direction = "down") %>%
+    treatyr_sing = min(regchayr, na.rm = TRUE)
+    ) %>%
   ungroup() %>%
   select(-regchayr)
 
+#dyadyrs <- dyadyrs %>%
+#  group_by(id) %>%
+#  mutate(
+#    regchayr = ifelse(regcha_uni == 1, year, NA),
+#    treatyr_sing = min(regchayr, na.rm = TRUE),
+#    treatyr_multi = regchayr
+#  ) %>%
+#  fill(treatyr_multi, .direction = "down") %>%
+#  ungroup() %>%
+#  select(-regchayr)
+
 ## unique cases id for multi-entry year dyads
-dyadyrs <- dyadyrs %>%
-  mutate(
-    case_id = row_number()
-  ) %>%
-  group_by(id, treatyr_multi) %>%
-  mutate(
-    case_id = min(case_id, na.rm = TRUE)
-  ) %>%
-  ungroup()
+#dyadyrs <- dyadyrs %>%
+#  mutate(
+#    case_id = row_number()
+#  ) %>%
+#  group_by(id, treatyr_multi) %>%
+#  mutate(
+#    case_id = min(case_id, na.rm = TRUE)
+#  ) %>%
+#  ungroup()
 ```
 
 ## Descriptive Analysis
@@ -184,13 +193,35 @@ da <- dyadyrs %>%
     entente = sum(cow_entente, na.rm = TRUE),
     major = sum(major, na.rm = TRUE),
     rivalry = sum(ongoingrivalry, na.rm = TRUE),
-    gdppc = mean(gdppc_dyd, na.rm = TRUE),
-    sd_gdppc = sd(gdppc_dyd, na.rm = TRUE),
-    trade = mean(trade_dyd, na.rm = TRUE),
-    sd_trade = sd(trade_dyd, na.rm = TRUE),
-    nmc = mean(nmc_dyd, na.rm = TRUE),
-    sd_nmc = sd(nmc_dyd, na.rm = TRUE)
+    avg_gdppc = mean(gdppc, na.rm = TRUE),
+    sd_gdppc = sd(gdppc, na.rm = TRUE),
+    avg_trade = mean(trade, na.rm = TRUE),
+    sd_trade = sd(trade, na.rm = TRUE),
+    avg_nmc = mean(nc, na.rm = TRUE),
+    sd_nmc = sd(nc, na.rm = TRUE)
   )
+
+ggplot(data = da) +
+  geom_line(aes(x = year, y = onset), color = "navyblue") + 
+  labs(
+    title = "Numbers of Dyadic Militarized Interstate Dispute Onsets From 1946 to 2014",
+    x = "Year",
+    y = "Numbers of Onsets"
+  ) + 
+  ggthemes::theme_clean(base_size = 12)
+ggsave(filename = "onset.png", device = "png", 
+        dpi = 300, limitsize = FALSE)
+
+ggplot(data = da) +
+  geom_line(aes(x = year, y = regime)) + 
+  labs(
+    title = "Numbers of Dyad's with Regime Change From 1946 to 2014",
+    x = "Year",
+    y = "Numbers of Dyadic Regime Change"
+  ) + 
+  stevemisc::theme_steve_ms(base_size = 12)
+ggsave(filename = "regime.png", device = "png", 
+        dpi = 300, limitsize = FALSE)
 ```
 
 ## Effect Size
@@ -209,21 +240,21 @@ plot(mde)
 
 ```{r Parallel Trend Analysis}
 # multi-entry 
-demo <- dyadyrs %>%
-  group_by(case_id) %>%
-  mutate(
-    mid = cowmidonset - lag(cowmidonset) # try n = 5
-  ) %>%
-  summarise(
-    avg_mid = mean(mid, na.rm = TRUE),
-    treatyr_multi = unique(treatyr_multi)
-  )
+#demo <- dyadyrs %>%
+#  group_by(case_id) %>%
+#  mutate(
+#    mid = cowmidonset - lag(cowmidonset) # try n = 5
+#  ) %>%
+#  summarise(
+#    avg_mid = mean(mid, na.rm = TRUE),
+#    treatyr_multi = unique(treatyr_multi)
+#  )
 
-idk <- feols(treatyr_multi ~ avg_mid, data = demo)
-etable(idk)
+#idk <- feols(treatyr_multi ~ avg_mid, data = demo)
+#etable(idk)
 
-ggplot(demo, aes(x = treatyr_multi)) +
-  geom_smooth(aes(y = avg_mid), se = TRUE)
+#ggplot(demo, aes(x = treatyr_multi)) +
+#  geom_smooth(aes(y = avg_mid), se = TRUE)
 
 # single entry
 demo2 <- dyadyrs %>%
@@ -233,15 +264,16 @@ demo2 <- dyadyrs %>%
   ) %>%
   summarise(
     avg_mid = mean(mid, na.rm = TRUE),
-    treatyr_sing = unique(treatyr_sing)
+    treatyr = unique(treatyr_sing)
   )
 
-idk2 <- feols(treatyr_sing ~ avg_mid, data = demo2)
+idk2 <- feols(treatyr ~ avg_mid, data = demo2)
 etable(idk2)
 
-ggplot(demo2, aes(x = treatyr_sing)) +
-  geom_smooth(aes(y = avg_mid), se = TRUE)
-
+ggplot(demo2, aes(x = treatyr)) +
+  geom_smooth(aes(y = avg_mid), method = "lm", se = TRUE) + 
+  stevemisc::theme_steve_ms()
+ggsave(filename = "paratrend.png", device = "png", limitsize = FALSE, dpi = 300)
 ```
 
 ## Event Study
@@ -281,6 +313,7 @@ media_test <- feols(c(cow_defense, cow_neutral, cow_nonagg, cow_entente,
                       gdppc_dyd, trade_dyd, nmc_dyd) ~ regcha_uni | 
                       year + ccode1 + ccode2, data = dyadyrs)
 etable(media_test)
+# stevemisc::show_ranef(media_test)
 
 # OLS
 m <- feols(cowmidonset ~ regcha_uni + 
