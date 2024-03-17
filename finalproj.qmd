@@ -94,8 +94,8 @@ dyadyrs <- dyadyrs %>%
   add_sdp_gdp() %>%
   add_cow_trade() %>%
   mutate(
-    gdppc = abs(wbgdppc2011est1 - wbgdppc2011est2),
-    trade = abs(flow1 - flow2)
+    gdppc = wbgdppc2011est1 + wbgdppc2011est2,
+    trade = flow1 + flow2
   ) %>%
   group_by(year) %>%
   mutate(
@@ -111,7 +111,7 @@ v_ids <- names(dyadyrs)
 nmc_sy <- cow_nmc %>%
   group_by(year) %>%
   mutate(
-    nc = cinc / sum(cinc)
+    nc = cinc / sum(cinc, na.rm = TRUE)
     ) %>%
   ungroup() %>%
   rename(ccode1 = ccode,
@@ -167,17 +167,30 @@ dyadyrs <- dyadyrs %>%
   ) %>%
   ungroup()
 ```
+
 ## Descriptive Analysis
+
 ```{r}
 da <- dyadyrs %>%
   group_by(year) %>%
   summarise(
     onset = sum(cowmidonset, na.rm = TRUE),
     regime = sum(regcha_uni, na.rm = TRUE),
+    avg_piva = mean(piva, na.rm = TRUE),
+    sd_piva = sd(piva, na.rm = TRUE),
+    defense = sum(cow_defense, na.rm = TRUE),
+    neutral = sum(cow_neutral, na.rm = TRUE),
+    nonagg = sum(cow_nonagg, na.rm = TRUE),
+    entente = sum(cow_entente, na.rm = TRUE),
+    major = sum(major, na.rm = TRUE),
+    rivalry = sum(ongoingrivalry, na.rm = TRUE),
+    gdppc = mean(gdppc_dyd, na.rm = TRUE),
+    sd_gdppc = sd(gdppc_dyd, na.rm = TRUE),
+    trade = mean(trade_dyd, na.rm = TRUE),
+    sd_trade = sd(trade_dyd, na.rm = TRUE),
+    nmc = mean(nmc_dyd, na.rm = TRUE),
+    sd_nmc = sd(nmc_dyd, na.rm = TRUE)
   )
-
-
-
 ```
 
 ## Effect Size
