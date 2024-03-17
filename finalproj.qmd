@@ -295,9 +295,10 @@ ggplot(subsetdead, aes(x = tau)) +
   geom_vline(xintercept = 0) +
   theme(text = element_text(family = "Crimson Text"))
 
+
 reg <- feols(cowmidonset ~ factor(tau) | id+year, cluster = c("year", "id"), data = filter(demo3, abs(tau) < 10))
 regdat <- as_tibble(reg$coeftable)
-ggplot(regdat, aes(x = tau, y = Est)) +
+ggplot(data = regdat, aes(x = c(-8:9), y = Estimate)) +
   geom_point() + 
   theme(text = element_text(family = "Crimson Text"))
 ```
