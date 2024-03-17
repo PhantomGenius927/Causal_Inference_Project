@@ -173,31 +173,10 @@ da <- dyadyrs %>%
   group_by(year) %>%
   summarise(
     onset = sum(cowmidonset, na.rm = TRUE),
-    regime = sum(regcha_uni, na.rm = TRUE)
-    
+    regime = sum(regcha_uni, na.rm = TRUE),
   )
 
-Hmisc::describe(da, exclude.missing = TRUE, digits = 4, trans = NULL)
 
-
-# Descriptive statistics for each variable within each time period
-summary_stats_within_time <- dyadyrs %>%
-  group_by(year) %>%
-  summarise(
-    Mean_Age = mean(piva),
-    SD_Age = sd(piva),
-    Median_Age = median(piva),
-    Min_Age = min(piva),
-    Max_Age = max(piva),
-    Mean_Score = mean(kappava),
-    SD_Score = sd(kappava),
-    Median_Score = median(kappava),
-    Min_Score = min(kappava),
-    Max_Score = max(kappava)
-  )
-
-print("Descriptive Statistics for Each Variable Within Each Time Period:")
-print(summary_stats_within_time)
 
 ```
 
