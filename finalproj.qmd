@@ -180,32 +180,20 @@ da <- dyadyrs %>%
 Hmisc::describe(da, exclude.missing = TRUE, digits = 4, trans = NULL)
 
 
-# Install and load required packages
-library(plm)
-
-# Convert to pdata.frame object
-
-# Descriptive statistics for each variable across time periods
-summary_stats_across_time <- pdata.frame(dyadyrs, index = c("id", "year")) %>%
-  filter(across(list(mean = mean, sd = sd, median = median, min = min, max = max)))
-
-print("Descriptive Statistics for Each Variable Across Time Periods:")
-print(summary_stats_across_time)
-
 # Descriptive statistics for each variable within each time period
-summary_stats_within_time <- panel_data_p %>%
-  group_by(Time) %>%
+summary_stats_within_time <- dyadyrs %>%
+  group_by(year) %>%
   summarise(
-    Mean_Age = mean(Age),
-    SD_Age = sd(Age),
-    Median_Age = median(Age),
-    Min_Age = min(Age),
-    Max_Age = max(Age),
-    Mean_Score = mean(Score),
-    SD_Score = sd(Score),
-    Median_Score = median(Score),
-    Min_Score = min(Score),
-    Max_Score = max(Score)
+    Mean_Age = mean(piva),
+    SD_Age = sd(piva),
+    Median_Age = median(piva),
+    Min_Age = min(piva),
+    Max_Age = max(piva),
+    Mean_Score = mean(kappava),
+    SD_Score = sd(kappava),
+    Median_Score = median(kappava),
+    Min_Score = min(kappava),
+    Max_Score = max(kappava)
   )
 
 print("Descriptive Statistics for Each Variable Within Each Time Period:")
