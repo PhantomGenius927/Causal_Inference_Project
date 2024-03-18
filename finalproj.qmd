@@ -296,7 +296,7 @@ ggplot(data=es_regdat,aes(x=tau,y=Est)) +
   theme_minimal(base_size=10) + 
   theme(text = element_text(family = "Crimson Text"))+
   xlab("Years Pre/Post Entry") + 
-  ylab("Home Improvements") +
+  ylab("Militarized Interstate Dispute") +
      geom_point() + 
   geom_errorbar(aes(ymax=Est+1.96*`Std. Error`,ymin=Est-1.96*`Std. Error`)) +
   geom_vline(xintercept=0,col="darkred",lty="dashed") + 
