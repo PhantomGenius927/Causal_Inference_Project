@@ -120,8 +120,7 @@ nmc_sy <- nmc_sy %>%
 dyadyrs <- left_join(dyadyrs, nmc_sy, by = c("ccode2", "year"))
 dyadyrs <- dyadyrs %>%
   mutate(
-    nc = abs(nc1 - nc2),
-    nc = log(nc)
+    nc = abs(nc1 - nc2)
     ) %>%
   group_by(year) %>%
   mutate(
