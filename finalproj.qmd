@@ -283,25 +283,17 @@ es <- dyadyrs %>%
   mutate(
     tau = year - treatyr_sing,
   )
-  
-es_tau <- aggregate(cowmidonset ~ tau, es, mean)
-es_tau <- es[es$tau <= 5 & es$tau >= -5, ]
 
-ggplot(es_tau, aes(x = tau)) +
-  geom_line(aes(y = cowmidonset)) + 
-  geom_vline(xintercept = 0) +
-  theme(text = element_text(family = "Crimson Text"))
+es_reg <- feols(cowmidonset ~ factor(tau) | ccode1 + ccode2 + year, 
+                cluster = c("year", "ccode1", "ccode2"), 
+                data = filter(es, abs(tau) < 15))
 
-
-es_reg <- feols(cowmidonset ~ factor(tau) | id+year, cluster = c("year", "id"), data = filter(es, abs(tau) < 10))
 es_regdat <- as_tibble(es_reg$coeftable)
-tau0 <- es_reg[["coefficients"]][["factor(tau)0"]]
-es_regdat <- es_regdat %>%
-  mutate(
-    Est = Estimate - tau0
-  )
-ggplot(data = es_regdat, aes(x = c(-8:9), y = Est)) +
-  geom_point() + 
+es_regdat$tau = -13:14
+es_regdat$Est = es_regdat$Estimate-es_regdat$Estimate[es_regdat$tau==0]
+
+ggplot(data=es_regdat,aes(x=tau,y=Est)) + 
+  theme_minimal(base_size=10) + 
   theme(text = element_text(family = "Crimson Text"))+
   xlab("Years Pre/Post Entry") + 
   ylab("Home Improvements") +
@@ -309,9 +301,8 @@ ggplot(data = es_regdat, aes(x = c(-8:9), y = Est)) +
   geom_errorbar(aes(ymax=Est+1.96*`Std. Error`,ymin=Est-1.96*`Std. Error`)) +
   geom_vline(xintercept=0,col="darkred",lty="dashed") + 
   geom_hline(yintercept=0,col="darkgrey") +
-  geom_smooth(aes(x = c(-8:0), se=TRUE)) + 
-  geom_smooth(aes(x= c(0:9), se=TRUE))
-
+  geom_smooth(data=subset(es_regdat,tau<0),se=TRUE) + 
+  geom_smooth(data=subset(es_regdat,tau>=0),se=TRUE)
 ```
 
 ## Statistical Analysis
