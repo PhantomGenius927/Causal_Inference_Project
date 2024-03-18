@@ -24,7 +24,7 @@ ids <- c("ccode1", "ccode2", "country1", "country2", "year")
 
 # Outcome Variable
 ## MID onsets
-dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1946:2014)) %>%
+dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1945:2014)) %>%
   add_cow_mids() %>%
   mutate(
     country1 = countrycode::countrycode(ccode1, 
@@ -199,7 +199,7 @@ da <- dyadyrs %>%
 ggplot(data = da) +
   geom_line(aes(x = year, y = onset), color = "darkred", linewidth = 0.7) + 
   labs(
-    title = "Numbers of Dyadic Militarized Interstate Dispute Onsets From 1946 to 2014",
+    title = "Numbers of Dyadic Militarized Interstate Dispute Onsets From 1945 to 2014",
     x = "Year",
     y = "Numbers of Onsets",
     caption = "Source: COW MIDs Dataset"
@@ -212,7 +212,7 @@ ggsave(filename = "onset.png", device = "png",
 ggplot(data = da) +
   geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
   labs(
-    title = "Numbers of Dyad's with Regime Change From 1946 to 2014",
+    title = "Numbers of Dyad's with Regime Change From 1945 to 2014",
     x = "Year",
     y = "Numbers of Dyadic Regime Change",
     caption = "Source: Polity IV 2018"
@@ -271,7 +271,13 @@ etable(pta_model)
 ggplot(pta, aes(x = treatyr, y = avg_mid)) +
   geom_smooth(method = "lm", se = TRUE) + 
   ggthemes::theme_clean(base_size = 10) +
-  theme(text = element_text(family = "Crimson Text"))
+  theme(text = element_text(family = "Crimson Text")) + 
+  labs(
+    x = "Year of Regime Change",
+    y = "Mean Change of Militarized Interstate Dispute's Possibility",
+    title = "Paralle Trend Analysis",
+    caption = "Source: COW MIDs Dataset"
+  )
 ggsave(filename = "paratrend.png", device = "png", limitsize = FALSE, dpi = 300)
 ```
 
@@ -286,23 +292,30 @@ es <- dyadyrs %>%
 
 es_reg <- feols(cowmidonset ~ factor(tau) | ccode1 + ccode2 + year, 
                 cluster = c("year", "ccode1", "ccode2"), 
-                data = filter(es, abs(tau) < 15))
+                data = filter(es, abs(tau) < 10))
 
 es_regdat <- as_tibble(es_reg$coeftable)
-es_regdat$tau = -13:14
+es_regdat$tau = -8:9
 es_regdat$Est = es_regdat$Estimate-es_regdat$Estimate[es_regdat$tau==0]
 
-ggplot(data=es_regdat,aes(x=tau,y=Est)) + 
-  theme_minimal(base_size=10) + 
+ggplot(data = es_regdat, aes(x = tau, y = Est)) + 
+  theme_minimal(base_size = 10) + 
   theme(text = element_text(family = "Crimson Text"))+
   xlab("Years Pre/Post Entry") + 
   ylab("Militarized Interstate Dispute") +
+  labs(
+    title = "Event Study",
+    caption = "Source: COW MIDs Dataset"
+  ) +
      geom_point() + 
-  geom_errorbar(aes(ymax=Est+1.96*`Std. Error`,ymin=Est-1.96*`Std. Error`)) +
-  geom_vline(xintercept=0,col="darkred",lty="dashed") + 
-  geom_hline(yintercept=0,col="darkgrey") +
-  geom_smooth(data=subset(es_regdat,tau<0),se=TRUE) + 
-  geom_smooth(data=subset(es_regdat,tau>=0),se=TRUE)
+  geom_errorbar(aes(ymax = Est+1.96*`Std. Error`, 
+                    ymin = Est-1.96*`Std. Error`)) +
+  geom_vline(xintercept = 0, 
+             col = "darkred", lty = "dashed") + 
+  geom_hline(yintercept = 0, 
+             col = "darkgrey") +
+  geom_smooth(data = subset(es_regdat, tau<0), se = TRUE) + 
+  geom_smooth(data = subset(es_regdat, tau>=0), se = TRUE)
 ```
 
 ## Statistical Analysis
@@ -422,4 +435,8 @@ m4 <- feols(cowmidonset ~ regcha_uni +
               ccode1 + ccode2 + year, 
             cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
 etable(m4)
+```
+## Cross-sectional Endogeneity Test
+```{r}
+
 ```
