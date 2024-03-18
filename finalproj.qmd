@@ -294,6 +294,8 @@ es_reg <- feols(cowmidonset ~ factor(tau) | ccode1 + ccode2 + year,
                 cluster = c("year", "ccode1", "ccode2"), 
                 data = filter(es, abs(tau) < 10))
 
+modelsummary::modelsummary(es_reg, stars = TRUE)
+
 es_regdat <- as_tibble(es_reg$coeftable)
 es_regdat$tau = -8:9
 es_regdat$Est = es_regdat$Estimate-es_regdat$Estimate[es_regdat$tau==0]
@@ -383,7 +385,8 @@ m1.4.2  <- feols(cowmidonset ~ regcha_uni  +
 etable(m1.1.2, m1.2.2, m1.3.2, m1.4.2)
 
 # TWFE with Key Explanatory Variables With Covariates
-m2.1 <- feols(cowmidonset ~ regcha_uni + 
+models <- list()
+models[['j']] <- feols(cowmidonset ~ regcha_uni + 
                 ongoingrivalry + regcha_uni:ongoingrivalry +
                 cow_defense + cow_neutral + cow_nonagg + cow_entente +
                 major + regcha_uni:major + 
@@ -392,7 +395,7 @@ m2.1 <- feols(cowmidonset ~ regcha_uni +
                 trade_dyd + gdppc_dyd + nmc_dyd | 
                 id + year, 
               cluster = c("year", "id"), data = dyadyrs)
-m2.2 <- feols(cowmidonset ~ regcha_uni + 
+models[['jj']] <- feols(cowmidonset ~ regcha_uni + 
                 ongoingrivalry + regcha_uni:ongoingrivalry +
                 cow_defense + cow_neutral + cow_nonagg + cow_entente +
                 major + regcha_uni:major + 
@@ -401,7 +404,7 @@ m2.2 <- feols(cowmidonset ~ regcha_uni +
                 trade_dyd + gdppc_dyd + nmc_dyd | 
                 ccode1 + ccode2 + year, 
               cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m2.1, m2.2)
+modelsummary::modelsummary(models)
 
 # Key Explanatory Variable 2 Without Covariates
 m3.1 <- feols(cowmidonset ~ regcha_uni + 
