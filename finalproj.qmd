@@ -302,7 +302,16 @@ es_regdat <- es_regdat %>%
   )
 ggplot(data = es_regdat, aes(x = c(-8:9), y = Est)) +
   geom_point() + 
-  theme(text = element_text(family = "Crimson Text"))
+  theme(text = element_text(family = "Crimson Text"))+
+  xlab("Years Pre/Post Entry") + 
+  ylab("Home Improvements") +
+     geom_point() + 
+  geom_errorbar(aes(ymax=Est+1.96*`Std. Error`,ymin=Est-1.96*`Std. Error`)) +
+  geom_vline(xintercept=0,col="darkred",lty="dashed") + 
+  geom_hline(yintercept=0,col="darkgrey") +
+  geom_smooth(data=subset(es_regdat,tau<0),se=TRUE) + 
+  geom_smooth(data=subset(es_regdat,tau>=0),se=TRUE)
+
 ```
 
 ## Statistical Analysis
