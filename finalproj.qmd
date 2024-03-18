@@ -106,16 +106,11 @@ dyadyrs <- dyadyrs %>%
 dyadyrs <- dyadyrs %>%
   select(all_of(v_ids), gdppc, gdppc_dyd, trade, trade_dyd)
   
-## NMC ratio
+## Capability ratio
 v_ids <- names(dyadyrs)
 nmc_sy <- cow_nmc %>%
-  group_by(year) %>%
-  mutate(
-    nc = cinc / sum(cinc, na.rm = TRUE)
-    ) %>%
-  ungroup() %>%
   rename(ccode1 = ccode,
-         nc1 = nc) %>%
+         nc1 = cinc) %>%
   select(ccode1, year, nc1)
 dyadyrs <- left_join(dyadyrs, nmc_sy, by = c("ccode1", "year"))
 
@@ -125,7 +120,8 @@ nmc_sy <- nmc_sy %>%
 dyadyrs <- left_join(dyadyrs, nmc_sy, by = c("ccode2", "year"))
 dyadyrs <- dyadyrs %>%
   mutate(
-    nc = abs(nc1 - nc2)
+    nc = abs(nc1 - nc2),
+    nc = log(nc)
     ) %>%
   group_by(year) %>%
   mutate(
@@ -202,11 +198,12 @@ da <- dyadyrs %>%
   )
 
 ggplot(data = da) +
-  geom_line(aes(x = year, y = onset), color = "navyblue") + 
+  geom_line(aes(x = year, y = onset), color = "darkred", linewidth = 0.7) + 
   labs(
     title = "Numbers of Dyadic Militarized Interstate Dispute Onsets From 1946 to 2014",
     x = "Year",
-    y = "Numbers of Onsets"
+    y = "Numbers of Onsets",
+    caption = "Source: COW MIDs Dataset"
   ) + 
   ggthemes::theme_clean(base_size = 10) + 
   theme(text = element_text(family = "Crimson Text"))
@@ -214,11 +211,12 @@ ggsave(filename = "onset.png", device = "png",
         dpi = 300, limitsize = FALSE)
 
 ggplot(data = da) +
-  geom_line(aes(x = year, y = regime)) + 
+  geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
   labs(
     title = "Numbers of Dyad's with Regime Change From 1946 to 2014",
     x = "Year",
-    y = "Numbers of Dyadic Regime Change"
+    y = "Numbers of Dyadic Regime Change",
+    caption = "Source: Polity IV 2018"
   ) + ggthemes::theme_clean(base_size = 10) + 
   theme(text = element_text(family = "Crimson Text"))
 ggsave(filename = "regime.png", device = "png", 
@@ -258,7 +256,7 @@ plot(mde)
 #  geom_smooth(aes(y = avg_mid), se = TRUE)
 
 # single entry
-demo2 <- dyadyrs %>%
+pta <- dyadyrs %>%
   group_by(id) %>%
   mutate(
     mid = cowmidonset - lag(cowmidonset)
@@ -268,10 +266,10 @@ demo2 <- dyadyrs %>%
     treatyr = unique(treatyr_sing)
   )
 
-idk2 <- feols(treatyr ~ avg_mid, data = demo2)
-etable(idk2)
+pta_model <- feols(treatyr ~ avg_mid, data = pta)
+etable(pta_model)
 
-ggplot(demo2, aes(x = treatyr, y = avg_mid)) +
+ggplot(pta, aes(x = treatyr, y = avg_mid)) +
   geom_smooth(method = "lm", se = TRUE) + 
   ggthemes::theme_clean(base_size = 10) +
   theme(text = element_text(family = "Crimson Text"))
@@ -282,23 +280,28 @@ ggsave(filename = "paratrend.png", device = "png", limitsize = FALSE, dpi = 300)
 
 ```{r Event Study}
 # tau
-demo3 <- dyadyrs %>%
+es <- dyadyrs %>%
   mutate(
     tau = year - treatyr_sing,
   )
   
-dead <- aggregate(cowmidonset ~ tau, demo3, mean)
-subsetdead <- dead[dead$tau <= 5 & dead$tau >= -5, ]
+es_tau <- aggregate(cowmidonset ~ tau, es, mean)
+es_tau <- es[es$tau <= 5 & es$tau >= -5, ]
 
-ggplot(subsetdead, aes(x = tau)) +
+ggplot(es_tau, aes(x = tau)) +
   geom_line(aes(y = cowmidonset)) + 
   geom_vline(xintercept = 0) +
   theme(text = element_text(family = "Crimson Text"))
 
 
-reg <- feols(cowmidonset ~ factor(tau) | id+year, cluster = c("year", "id"), data = filter(demo3, abs(tau) < 10))
-regdat <- as_tibble(reg$coeftable)
-ggplot(data = regdat, aes(x = c(-8:9), y = Estimate)) +
+es_reg <- feols(cowmidonset ~ factor(tau) | id+year, cluster = c("year", "id"), data = filter(es, abs(tau) < 10))
+es_regdat <- as_tibble(es_reg$coeftable)
+tau0 <- es_reg[["coefficients"]][["factor(tau)0"]]
+es_regdat <- es_regdat %>%
+  mutate(
+    Est = Estimate - tau0
+  )
+ggplot(data = es_regdat, aes(x = c(-8:9), y = Est)) +
   geom_point() + 
   theme(text = element_text(family = "Crimson Text"))
 ```
