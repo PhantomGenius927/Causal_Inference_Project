@@ -203,7 +203,7 @@ ggplot(data = da) +
     y = "Numbers of Onsets",
     caption = "Source: Correlates of War (CoW) Militarized Interstate Dispute (MID) project. (V5.0)"
   ) + 
-  ggthemes::theme_clean(base_size = 10) + 
+  ggthemes::theme_clean(base_size = 12) + 
   theme(text = element_text(family = "Crimson Text"))
 ggsave(filename = here::here("plots/onset.png"), device = "png", 
         dpi = 300, limitsize = FALSE)
@@ -214,7 +214,7 @@ ggplot(data = da) +
     x = "Year",
     y = "Numbers of Dyads with Regime Change",
     caption = "Source: Polity IV Project (2018)"
-  ) + ggthemes::theme_clean(base_size = 10) + 
+  ) + ggthemes::theme_clean(base_size = 12) + 
   theme(text = element_text(family = "Crimson Text"))
 ggsave(filename = here::here("plots/regime1945.png"), device = "png", 
         dpi = 300, limitsize = FALSE)
