@@ -417,15 +417,16 @@ es <- dyadyrs %>%
     tau = year - treatyr_sing,
   )
 
-es_reg <- feols(cowmidonset ~ factor(tau) | ccode1 + ccode2 + year, 
+es_reg <- feols(cowmidonset ~ factor(tau) + factor(tau):kappava | ccode1 + ccode2 + year, 
                 cluster = c("year", "ccode1", "ccode2"), 
                 data = filter(es, tau >= -9 & tau <= 8))
 
 etable(es_reg, file = here::here("tables/esreg.tex"))
 
 es_regdat <- as_tibble(es_reg$coeftable)
-es_regdat$tau = -8:8
-es_regdat$Est = es_regdat$Estimate-es_regdat$Estimate[es_regdat$tau==-1]
+es_regdat <- es_regdat[18:35,]
+es_regdat$tau = -9:8
+es_regdat$Est = es_regdat$Estimate-es_regdat$Estimate[es_regdat$tau==0]
 
 ggplot(data = es_regdat, aes(x = tau, y = Est)) + 
   theme_minimal(base_size = 10) + 
@@ -438,12 +439,12 @@ ggplot(data = es_regdat, aes(x = tau, y = Est)) +
      geom_point() + 
   geom_errorbar(aes(ymax = Est+1.96*`Std. Error`, 
                     ymin = Est-1.96*`Std. Error`)) +
-  geom_vline(xintercept = -1, 
+  geom_vline(xintercept = 0, 
              col = "darkred", lty = "dashed") + 
   geom_hline(yintercept = 0, 
              col = "darkgrey") +
-  geom_smooth(data = subset(es_regdat, tau < -1), se = TRUE) + 
-  geom_smooth(data = subset(es_regdat, tau >= -1), se = TRUE)
+  geom_smooth(data = subset(es_regdat, tau <= 0), se = TRUE) + 
+  geom_smooth(data = subset(es_regdat, tau >= 0), se = TRUE)
 ggsave(filename = here::here("plots/leadslags.png"), device = "png", limitsize = FALSE, dpi = 300)
 ```
 
