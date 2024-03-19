@@ -203,10 +203,10 @@ ggplot(data = da) +
     y = "Numbers of Onsets",
     caption = "Source: Correlates of War (CoW) Militarized Interstate Dispute (MID) project. (V5.0)"
   ) + 
-  ggthemes::theme_clean(base_size = 12) + 
+  ggthemes::theme_clean(base_size = 11) + 
   theme(text = element_text(family = "Crimson Text"))
 ggsave(filename = here::here("plots/onset.png"), device = "png", 
-        dpi = 300, limitsize = FALSE)
+        width = 5, height = 3, units = "in", dpi = 300, limitsize = FALSE)
 
 ggplot(data = da) +
   geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
@@ -214,22 +214,22 @@ ggplot(data = da) +
     x = "Year",
     y = "Numbers of Dyads with Regime Change",
     caption = "Source: Polity IV Project (2018)"
-  ) + ggthemes::theme_clean(base_size = 12) + 
+  ) + ggthemes::theme_clean(base_size = 11) + 
   theme(text = element_text(family = "Crimson Text"))
 ggsave(filename = here::here("plots/regime1945.png"), device = "png", 
-        dpi = 300, limitsize = FALSE)
+        width = 5, height = 3, units = "in", dpi = 300, limitsize = FALSE)
 
-ggplot(data = da) +
-  geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
-  labs(
-    x = "Year",
-    y = "Numbers of Dyads with Regime Change",
-   caption = "Source: Polity IV Project (2018)"
-  ) + ggthemes::theme_clean(base_size = 12) + 
-  geom_vline(xintercept = 1945, color = "black") +
-  theme(text = element_text(family = "Crimson Text"))
-ggsave(filename = here::here("plots/regime1816.png"), device = "png", 
-        dpi = 300, limitsize = FALSE)
+#ggplot(data = da) +
+#  geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
+#  labs(
+#    x = "Year",
+#    y = "Numbers of Dyads with Regime Change",
+#   caption = "Source: Polity IV Project (2018)"
+#  ) + ggthemes::theme_clean(base_size = 11) + 
+#  geom_vline(xintercept = 1945, color = "black") +
+#  theme(text = element_text(family = "Crimson Text"))
+#ggsave(filename = here::here("plots/regime1816.png"), device = "png", 
+#       width = 5, height = 3, units = "in", dpi = 300, limitsize = FALSE)
 ```
 
 ## Effect Size
