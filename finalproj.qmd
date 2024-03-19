@@ -219,17 +219,17 @@ ggplot(data = da) +
 ggsave(filename = here::here("plots/regime1945.png"), device = "png", 
         dpi = 300, limitsize = FALSE)
 
-#ggplot(data = da) +
-#  geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
-#  labs(
-#    x = "Year",
-#    y = "Numbers of Dyads with Regime Change",
-#   caption = "Source: Polity IV Project (2018)"
-#  ) + ggthemes::theme_clean(base_size = 10) + 
-#  geom_vline(xintercept = 1945, color = "black") +
-#  theme(text = element_text(family = "Crimson Text"))
-#ggsave(filename = here::here("plots/regime1816.png"), device = "png", 
-#        dpi = 300, limitsize = FALSE)
+ggplot(data = da) +
+  geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
+  labs(
+    x = "Year",
+    y = "Numbers of Dyads with Regime Change",
+   caption = "Source: Polity IV Project (2018)"
+  ) + ggthemes::theme_clean(base_size = 12) + 
+  geom_vline(xintercept = 1945, color = "black") +
+  theme(text = element_text(family = "Crimson Text"))
+ggsave(filename = here::here("plots/regime1816.png"), device = "png", 
+        dpi = 300, limitsize = FALSE)
 ```
 
 ## Effect Size
