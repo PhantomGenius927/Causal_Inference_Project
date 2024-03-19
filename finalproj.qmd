@@ -199,10 +199,9 @@ da <- dyadyrs %>%
 ggplot(data = da) +
   geom_line(aes(x = year, y = onset), color = "darkred", linewidth = 0.7) + 
   labs(
-    title = "Numbers of Dyadic Militarized Interstate Dispute Onsets From 1945 to 2014",
     x = "Year",
     y = "Numbers of Onsets",
-    caption = "Source: COW MIDs Dataset"
+    caption = "Source: Correlates of War (CoW) Militarized Interstate Dispute (MID) project. (V5.0)"
   ) + 
   ggthemes::theme_clean(base_size = 10) + 
   theme(text = element_text(family = "Crimson Text"))
@@ -212,14 +211,25 @@ ggsave(filename = here::here("plots/onset.png"), device = "png",
 ggplot(data = da) +
   geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
   labs(
-    title = "Numbers of Dyad's with Regime Change From 1945 to 2014",
     x = "Year",
-    y = "Numbers of Dyadic Regime Change",
-    caption = "Source: Polity IV 2018"
+    y = "Numbers of Dyads with Regime Change",
+    caption = "Source: Polity IV Project (2018)"
   ) + ggthemes::theme_clean(base_size = 10) + 
   theme(text = element_text(family = "Crimson Text"))
-ggsave(filename = here::here("plots/regime.png"), device = "png", 
+ggsave(filename = here::here("plots/regime1945.png"), device = "png", 
         dpi = 300, limitsize = FALSE)
+
+#ggplot(data = da) +
+#  geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
+#  labs(
+#    x = "Year",
+#    y = "Numbers of Dyads with Regime Change",
+#   caption = "Source: Polity IV Project (2018)"
+#  ) + ggthemes::theme_clean(base_size = 10) + 
+#  geom_vline(xintercept = 1945, color = "black") +
+#  theme(text = element_text(family = "Crimson Text"))
+#ggsave(filename = here::here("plots/regime1816.png"), device = "png", 
+#        dpi = 300, limitsize = FALSE)
 ```
 
 ## Effect Size
