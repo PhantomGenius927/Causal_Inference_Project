@@ -337,23 +337,6 @@ m1.4 <- feols(cowmidonset ~ regcha_uni  +
               cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
 etable(m1.1, m1.2, m1.3, m1.4)
 
-m1.1.2 <- feols(cowmidonset ~ regcha_uni + 
-                  kappava + regcha_uni:kappava | 
-                  id + year, 
-                data = dyadyrs)
-m1.2.2  <- feols(cowmidonset ~ regcha_uni + 
-                   kappava + regcha_uni:kappava | 
-                   id + year, 
-                 cluster = c("year", "id"), data = dyadyrs)
-m1.3.2  <- feols(cowmidonset ~ regcha_uni + 
-                   kappava + regcha_uni:kappava | 
-                   ccode1 + ccode2 + year, data = dyadyrs)
-m1.4.2  <- feols(cowmidonset ~ regcha_uni  + 
-                   kappava + regcha_uni:kappava | 
-                   ccode1 + ccode2 + year, 
-                 cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m1.1.2, m1.2.2, m1.3.2, m1.4.2)
-
 # TWFE with Key Explanatory Variables With Covariates
 m2.1 <- feols(cowmidonset ~ regcha_uni + 
                 ongoingrivalry + regcha_uni:ongoingrivalry +
