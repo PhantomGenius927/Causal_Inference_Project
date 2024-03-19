@@ -180,8 +180,8 @@ da <- dyadyrs %>%
   summarise(
     onset = sum(cowmidonset, na.rm = TRUE),
     regime = sum(regcha_uni, na.rm = TRUE),
-    avg_piva = mean(piva, na.rm = TRUE),
-    sd_piva = sd(piva, na.rm = TRUE),
+    avg_kappava = mean(kappava, na.rm = TRUE),
+    sd_kappava = sd(kappava, na.rm = TRUE),
     defense = sum(cow_defense, na.rm = TRUE),
     neutral = sum(cow_neutral, na.rm = TRUE),
     nonagg = sum(cow_nonagg, na.rm = TRUE),
@@ -309,7 +309,7 @@ etable(media_test)
 
 # OLS
 m <- feols(cowmidonset ~ regcha_uni + 
-             piva + regcha_uni:piva + 
+             kappava + regcha_uni:kappava + 
              ongoingrivalry + regcha_uni:ongoingrivalry +
              cow_defense + cow_neutral + cow_nonagg + cow_entente +
              major + regcha_uni:major + 
@@ -321,18 +321,18 @@ etable(m)
 
 # Key Explanatory Variable 1 Without Covariates
 m1.1 <- feols(cowmidonset ~ regcha_uni + 
-                piva + regcha_uni:piva | 
+                kappava + regcha_uni:kappava | 
                 id + year, 
               data = dyadyrs)
 m1.2 <- feols(cowmidonset ~ regcha_uni + 
-                piva + regcha_uni:piva | 
+                kappava + regcha_uni:kappava | 
                 id + year, 
               cluster = c("year", "id"), data = dyadyrs)
 m1.3 <- feols(cowmidonset ~ regcha_uni + 
-                piva + regcha_uni:piva | 
+                kappava + regcha_uni:kappava | 
               ccode1 + ccode2 + year, data = dyadyrs)
 m1.4 <- feols(cowmidonset ~ regcha_uni  + 
-                piva + regcha_uni:piva | 
+                kappava + regcha_uni:kappava | 
               ccode1 + ccode2 + year, 
               cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
 etable(m1.1, m1.2, m1.3, m1.4)
@@ -396,8 +396,8 @@ etable(m3.1, m3.2, m3.3, m3.4, file = here::here("tables/etr.tex"))
 
 # TWFE With Two Key Explanatory Variables With Covariates
 m4 <- feols(cowmidonset ~ regcha_uni + 
-              piva + regcha_uni:piva + 
-              I(piva^2) + regcha_uni:I(piva^2) + 
+              kappava + regcha_uni:kappava + 
+              I(kappava^2) + regcha_uni:I(kappava^2) + 
               ongoingrivalry + regcha_uni:ongoingrivalry +
               cow_defense + cow_neutral + cow_nonagg + cow_entente +
               major + regcha_uni:major + 
