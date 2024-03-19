@@ -226,7 +226,7 @@ ggsave(filename = "regime.png", device = "png",
 
 ```{r Effect Size}
 ees <- feols(cowmidonset ~ regcha_uni | year + ccode1 + ccode2, data = dyadyrs)
-etable(ees, file = here::here("ees.tex"))
+etable(ees, file = here::here("tables/ees.tex"))
 
 mde <- pwr::pwr.t.test(n = n_distinct(dyadyrs)/2, d = NULL, 
                        sig.level = 0.05, power = 0.8, 
@@ -346,8 +346,7 @@ m1.4.2  <- feols(cowmidonset ~ regcha_uni  +
 etable(m1.1.2, m1.2.2, m1.3.2, m1.4.2)
 
 # TWFE with Key Explanatory Variables With Covariates
-models <- list()
-models[['j']] <- feols(cowmidonset ~ regcha_uni + 
+m2.1 <- feols(cowmidonset ~ regcha_uni + 
                 ongoingrivalry + regcha_uni:ongoingrivalry +
                 cow_defense + cow_neutral + cow_nonagg + cow_entente +
                 major + regcha_uni:major + 
@@ -356,7 +355,7 @@ models[['j']] <- feols(cowmidonset ~ regcha_uni +
                 trade_dyd + gdppc_dyd + nmc_dyd | 
                 id + year, 
               cluster = c("year", "id"), data = dyadyrs)
-models[['jj']] <- feols(cowmidonset ~ regcha_uni + 
+m2.2 <- feols(cowmidonset ~ regcha_uni + 
                 ongoingrivalry + regcha_uni:ongoingrivalry +
                 cow_defense + cow_neutral + cow_nonagg + cow_entente +
                 major + regcha_uni:major + 
@@ -365,7 +364,7 @@ models[['jj']] <- feols(cowmidonset ~ regcha_uni +
                 trade_dyd + gdppc_dyd + nmc_dyd | 
                 ccode1 + ccode2 + year, 
               cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-modelsummary::modelsummary(models)
+etable(m2.1,m2.2, file = here::here("tables/2.tex"))
 
 # Key Explanatory Variable 2 Without Covariates
 m3.1 <- feols(cowmidonset ~ regcha_uni + 
@@ -384,7 +383,7 @@ m3.4 <- feols(cowmidonset ~ regcha_uni  +
                 ongoingrivalry + regcha_uni:ongoingrivalry | 
                 ccode1 + ccode2 + year, 
               cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m3.1, m3.2, m3.3, m3.4)
+etable(m3.1, m3.2, m3.3, m3.4, file = here::here("tables/etr.tex"))
 
 # TWFE With Two Key Explanatory Variables With Covariates
 m4 <- feols(cowmidonset ~ regcha_uni + 
