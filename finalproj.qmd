@@ -206,7 +206,7 @@ ggplot(data = da) +
   ) + 
   ggthemes::theme_clean(base_size = 10) + 
   theme(text = element_text(family = "Crimson Text"))
-ggsave(filename = "onset.png", device = "png", 
+ggsave(filename = here::here("plots/onset.png"), device = "png", 
         dpi = 300, limitsize = FALSE)
 
 ggplot(data = da) +
@@ -218,7 +218,7 @@ ggplot(data = da) +
     caption = "Source: Polity IV 2018"
   ) + ggthemes::theme_clean(base_size = 10) + 
   theme(text = element_text(family = "Crimson Text"))
-ggsave(filename = "regime.png", device = "png", 
+ggsave(filename = here::here("plots/regime.png"), device = "png", 
         dpi = 300, limitsize = FALSE)
 ```
 
@@ -278,7 +278,7 @@ ggplot(pta, aes(x = treatyr, y = avg_mid)) +
     title = "Paralle Trend Analysis",
     caption = "Source: COW MIDs Dataset"
   )
-ggsave(filename = "paratrend.png", device = "png", limitsize = FALSE, dpi = 300)
+ggsave(filename = here::here("plots/paratrend.png"), device = "png", limitsize = FALSE, dpi = 300)
 ```
 
 ## Statistical Analysis
@@ -436,7 +436,7 @@ ggplot(data = es_regdat, aes(x = tau, y = Est)) +
              col = "darkgrey") +
   geom_smooth(data = subset(es_regdat, tau < -1), se = TRUE) + 
   geom_smooth(data = subset(es_regdat, tau >= -1), se = TRUE)
-ggsave(filename = "leadslags.png", device = "png", limitsize = FALSE, dpi = 300)
+ggsave(filename = here::here("plots/leadslags.png"), device = "png", limitsize = FALSE, dpi = 300)
 ```
 
 
