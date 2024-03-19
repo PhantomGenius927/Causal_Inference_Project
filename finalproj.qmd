@@ -266,7 +266,7 @@ pta <- dyadyrs %>%
   )
 
 pta_model <- feols(treatyr ~ avg_mid, data = pta)
-etable(pta_model)
+etable(pta_model, file = here::here("tables/pta.tex"))
 
 ggplot(pta, aes(x = treatyr, y = avg_mid)) +
   geom_smooth(method = "lm", se = TRUE) + 
@@ -410,13 +410,13 @@ es <- dyadyrs %>%
 
 es_reg <- feols(cowmidonset ~ factor(tau) | ccode1 + ccode2 + year, 
                 cluster = c("year", "ccode1", "ccode2"), 
-                data = filter(es, abs(tau) < 10))
+                data = filter(es, tau >= -9 & tau <= 8))
 
-modelsummary::modelsummary(es_reg, stars = TRUE)
+etable(es_reg, file = here::here("tables/esreg.tex"))
 
 es_regdat <- as_tibble(es_reg$coeftable)
-es_regdat$tau = -8:9
-es_regdat$Est = es_regdat$Estimate-es_regdat$Estimate[es_regdat$tau==0]
+es_regdat$tau = -8:8
+es_regdat$Est = es_regdat$Estimate-es_regdat$Estimate[es_regdat$tau==-1]
 
 ggplot(data = es_regdat, aes(x = tau, y = Est)) + 
   theme_minimal(base_size = 10) + 
@@ -430,42 +430,13 @@ ggplot(data = es_regdat, aes(x = tau, y = Est)) +
      geom_point() + 
   geom_errorbar(aes(ymax = Est+1.96*`Std. Error`, 
                     ymin = Est-1.96*`Std. Error`)) +
-  geom_vline(xintercept = 0, 
+  geom_vline(xintercept = -1, 
              col = "darkred", lty = "dashed") + 
   geom_hline(yintercept = 0, 
              col = "darkgrey") +
-  geom_smooth(data = subset(es_regdat, tau<0), se = TRUE) + 
-  geom_smooth(data = subset(es_regdat, tau>=0), se = TRUE)
+  geom_smooth(data = subset(es_regdat, tau < -1), se = TRUE) + 
+  geom_smooth(data = subset(es_regdat, tau >= -1), se = TRUE)
 ggsave(filename = "leadslags.png", device = "png", limitsize = FALSE, dpi = 300)
-
-es_reg2 <- feols(cowmidonset ~ factor(tau) | id + year, 
-                cluster = c("year", "id"), 
-                data = filter(es, abs(tau) < 10))
-
-modelsummary::modelsummary(es_reg2, stars = TRUE)
-
-es_regdat2 <- as_tibble(es_reg2$coeftable)
-es_regdat2$tau = -8:9
-es_regdat2$Est = es_regdat2$Estimate-es_regdat2$Estimate[es_regdat2$tau==0]
-
-ggplot(data = es_regdat2, aes(x = tau, y = Est)) + 
-  theme_minimal(base_size = 10) + 
-  theme(text = element_text(family = "Crimson Text"))+
-  xlab("Years Pre/Post Entry") + 
-  ylab("Militarized Interstate Dispute") +
-  labs(
-    title = "Event Study",
-    caption = "Source: COW MIDs Dataset"
-  ) +
-     geom_point() + 
-  geom_errorbar(aes(ymax = Est+1.96*`Std. Error`, 
-                    ymin = Est-1.96*`Std. Error`)) +
-  geom_vline(xintercept = 0, 
-             col = "darkred", lty = "dashed") + 
-  geom_hline(yintercept = 0, 
-             col = "darkgrey") +
-  geom_smooth(data = subset(es_regdat, tau<0), se = TRUE) + 
-  geom_smooth(data = subset(es_regdat, tau>=0), se = TRUE)
 ```
 
 
