@@ -285,7 +285,6 @@ ggplot(pta, aes(x = treatyr, y = avg_mid)) +
   labs(
     x = "Year of Regime Change",
     y = "Mean Change of Militarized Interstate Dispute's Possibility",
-    title = "Paralle Trend Analysis",
     caption = "Source: COW MIDs Dataset"
   )
 ggsave(filename = here::here("plots/paratrend.png"), device = "png", limitsize = FALSE, dpi = 300)
@@ -434,8 +433,7 @@ ggplot(data = es_regdat, aes(x = tau, y = Est)) +
   xlab("Years Pre/Post Entry") + 
   ylab("Militarized Interstate Dispute") +
   labs(
-    title = "Event Study",
-    caption = "Source: COW MIDs Dataset"
+    caption = "Correlates of War (CoW) Militarized Interstate Dispute (MID) project. (V5.0)"
   ) +
      geom_point() + 
   geom_errorbar(aes(ymax = Est+1.96*`Std. Error`, 
