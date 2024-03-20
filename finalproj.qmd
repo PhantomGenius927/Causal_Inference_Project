@@ -24,7 +24,7 @@ ids <- c("ccode1", "ccode2", "country1", "country2", "year")
 
 # Outcome Variable
 ## MID onsets
-dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1945:2014)) %>%
+dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1945:1960)) %>%
   add_cow_mids() %>%
   mutate(
     country1 = countrycode::countrycode(ccode1, 
@@ -207,6 +207,8 @@ ggplot(data = da) +
   theme(text = element_text(family = "Crimson Text"))
 ggsave(filename = here::here("plots/onset.png"), device = "png", 
         width = 5, height = 3, units = "in", dpi = 300, limitsize = FALSE)
+da <- da %>%
+  filter(year <= 2000)
 
 ggplot(data = da) +
   geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
