@@ -25,7 +25,7 @@ ids <- c("ccode1", "ccode2", "country1", "country2", "year")
 
 # Outcome Variable
 ## MID onsets
-dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1945:2014)) %>%
+dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1945:2010)) %>%
   add_cow_mids() %>%
   mutate(
     country1 = countrycode::countrycode(ccode1, 
@@ -490,4 +490,3 @@ media_test <- feols(c(alliance,
 etable(media_test)
 # stevemisc::show_ranef(media_test)
 ```
-
