@@ -317,7 +317,7 @@ mdyadyrs <- dyadyrs %>%
   drop_na(regcha_uni, ongoingrivalry, alliance, major,
           mindist, trade_dyd, gdppc_dyd, nmc_dyd)
 m.out <- matchit(regcha_uni ~ ongoingrivalry +
-             #alliance +
+             alliance +
              major +
              mindist + I(mindist^2) +
              trade_dyd + gdppc_dyd + nmc_dyd,
