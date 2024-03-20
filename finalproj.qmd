@@ -519,50 +519,91 @@ etable(twfe2, twfe4, twfe3, twfe5, view = TRUE, file = here::here("tables/twfe.t
 
 twfe_betahat <- summary(twfe5)$coefficients #save the coefficients
 twfe_sigma <- summary(twfe5)$cov.scaled #save the covariance matrix
-
-twfe_betahat <- twfe_betahat["regcha_uni:kappava"]
-twfe_sigma <-twfe_sigma["regcha_uni:kappava", "regcha_uni:kappava"]
-delta_rm_results <- 
-HonestDiD::createSensitivityResults_relativeMagnitudes(
-                                    betahat = twfe_betahat, #coefficients
-                                    sigma = twfe_sigma, #covariance matrix
-                                    numPrePeriods = 1, #num. of pre-treatment coefs
-                                    numPostPeriods = 1, #num. of post-treatment coefs
-                                    Mbarvec = seq(0.5,2,by=0.5) #values of Mbar
-                                    )
-
-delta_rm_results
-
-originalResults <- HonestDiD::constructOriginalCS(betahat = betahat,
-                                                  sigma = sigma,
-                                                  numPrePeriods = 5,
-                                                  numPostPeriods = 2)
-
-HonestDiD::createSensitivityPlot_relativeMagnitudes(delta_rm_results, originalResults)
-
 ```
 
 ## Event Study
 
-```{r Event Study}
+```{r Event Study, Manually}
 # tau
 es <- dyadyrs %>%
   mutate(
     tau = year - treatyr_sing,
   )
 
-es_reg <- feols(cowmidonset ~ factor(tau) + factor(tau):kappava | ccode1 + ccode2 + year, 
+es_reg <- feols(cowmidonset ~ factor(tau) + 
+                  kappava + factor(tau):kappava + 
+                  ongoingrivalry + 
+                  alliance + 
+                  major + 
+                  mindist + I(mindist^2) +
+                  trade_dyd + gdppc_dyd + nmc_dyd 
+                  | ccode1 + ccode2 + year, 
                 cluster = c("year", "ccode1", "ccode2"), 
-                data = filter(es, tau >= -9 & tau <= 8))
+                data = filter(es, tau >= -10 & tau <= 10))
 
 etable(es_reg, file = here::here("tables/esreg.tex"), view = TRUE)
 
 es_regdat <- as_tibble(es_reg$coeftable)
-es_regdat <- es_regdat[18:35,]
-es_regdat$tau = -9:8
-es_regdat$Est = es_regdat$Estimate-es_regdat$Estimate[es_regdat$tau==0]
 
-ggplot(data = es_regdat, aes(x = tau, y = Est)) + 
+# regime change
+es_regdat_rg <- es_regdat[1:20,]
+es_regdat_rg$tau = -9:10
+es_regdat_rg$Est = es_regdat_rg$Estimate-es_regdat_rg$Estimate[es_regdat_rg$tau==0]
+
+ggplot(data = es_regdat_rg, aes(x = tau, y = Est)) + 
+  theme_minimal(base_size = 11) + 
+  theme(text = element_text(family = "Crimson Text"))+
+  xlab("Years Pre/Post Entry") + 
+  ylab("Militarized Interstate Dispute") +
+  labs(
+    caption = "Correlates of War (CoW) Militarized Interstate Dispute (MID) project. (V5.0)"
+  ) +
+     geom_point() + 
+  geom_errorbar(aes(ymax = Est+1.96*`Std. Error`, 
+                    ymin = Est-1.96*`Std. Error`)) +
+  geom_vline(xintercept = 0, 
+             col = "darkred", lty = "dashed") + 
+  geom_hline(yintercept = 0, 
+             col = "darkgrey") +
+  geom_smooth(data = subset(es_regdat_rg, tau < 0), se = TRUE) + 
+  geom_smooth(data = subset(es_regdat_rg, tau >= 0), se = TRUE)
+ggsave(filename = here::here("plots/leadslags.png"), device = "png", 
+       width =5, height = 3, units = "in", limitsize = FALSE, dpi = 300)
+
+betahat_rg <- summary(es_reg)$coefficients #save the coefficients
+sigma_rg <- summary(es_reg)$cov.scaled #save the covariance matrix
+betahat_rg <- betahat_rg[1:20]
+sigma_rg <- sigma_rg[1:20, 1:20]
+
+delta_rm_results_rg <- 
+HonestDiD::createSensitivityResults_relativeMagnitudes(
+                                    betahat = betahat_rg, #coefficients
+                                    sigma = sigma_rg, #covariance matrix
+                                    numPrePeriods = 9, #num. of pre-treatment coefs
+                                    numPostPeriods = 11, #num. of post-treatment coefs
+                                    Mbarvec = seq(0.5,2,by=0.5),
+                                    parallel = TRUE#values of Mbar
+                                    )
+
+delta_rm_results_rg
+originalResults_rg <- HonestDiD::constructOriginalCS(betahat = betahat_rg,
+                                                  sigma = sigma_rg,
+                                                  numPrePeriods = 9,
+                                                  numPostPeriods = 11
+                                                  )
+
+rgplot <- HonestDiD::createSensitivityPlot_relativeMagnitudes(delta_rm_results_rg, originalResults_rg)
+rgplot <- rgplot + theme(text = element_text(family = "Crimson Text", size = 11))
+ggsave(
+  filename = here::here("plots/similarity_rg.png"), device = "png", limitsize = FALSE, dpi = 300, plot = rgplot, width =5, height = 3, units = "in"
+  )
+
+# interactive
+es_regdat_fpsi <- es_regdat[30:49,]
+es_regdat_fpsi$tau = -9:10
+es_regdat_fpsi$Est = es_regdat_fpsi$Estimate-es_regdat_fpsi$Estimate[es_regdat_fpsi$tau==0]
+
+ggplot(data = es_regdat_fpsi, aes(x = tau, y = Est)) + 
   theme_minimal(base_size = 10) + 
   theme(text = element_text(family = "Crimson Text"))+
   xlab("Years Pre/Post Entry") + 
@@ -577,11 +618,40 @@ ggplot(data = es_regdat, aes(x = tau, y = Est)) +
              col = "darkred", lty = "dashed") + 
   geom_hline(yintercept = 0, 
              col = "darkgrey") +
-  geom_smooth(data = subset(es_regdat, tau <= 0), se = TRUE) + 
-  geom_smooth(data = subset(es_regdat, tau >= 0), se = TRUE)
-ggsave(filename = here::here("plots/leadslags.png"), device = "png", limitsize = FALSE, dpi = 300)
+  geom_smooth(data = subset(es_regdat_fpsi, tau < -1), se = TRUE) + 
+  geom_smooth(data = subset(es_regdat_fpsi, tau >= -1), se = TRUE)
+ggsave(filename = here::here("plots/leadslags_fpsi.png"), device = "png", width =5, height = 3, units = "in", limitsize = FALSE, dpi = 300)
 
+betahat_fpsi <- summary(es_reg)$coefficients #save the coefficients
+sigma_fpsi <- summary(es_reg)$cov.scaled #save the covariance matrix
+betahat_fpsi <- betahat_fpsi[30:49]
+sigma_fpsi <- sigma_fpsi[30:49, 30:49]
 
+delta_rm_results_fpsi <- 
+HonestDiD::createSensitivityResults_relativeMagnitudes(
+                                    betahat = betahat_fpsi, #coefficients
+                                    sigma = sigma_fpsi, #covariance matrix
+                                    numPrePeriods = 9, #num. of pre-treatment coefs
+                                    numPostPeriods = 11, #num. of post-treatment coefs
+                                    Mbarvec = seq(0.5,2,by=0.5),
+                                    parallel = TRUE#values of Mbar
+                                    )
+
+delta_rm_results_fpsi
+originalResults_fpsi <- HonestDiD::constructOriginalCS(betahat = betahat,
+                                                  sigma = sigma,
+                                                  numPrePeriods = 9,
+                                                  numPostPeriods = 11)
+
+fpsiplot <- HonestDiD::createSensitivityPlot_relativeMagnitudes(delta_rm_results_fpsi, originalResults_fpsi)
+fpsiplot <- fpsiplot + theme(text = element_text(family = "Crimson Text", size = 11))
+ggsave(
+  filename = here::here("plots/similarity_fpsi.png"), device = "png", limitsize = FALSE, dpi = 300, plot = rgplot, width =5, height = 3, units = "in"
+  )
+
+```
+
+```{r San & Ann DiD}
 dyadyrs$id <- as.numeric(dyadyrs$id)
 dyadyrs$ccode1 <- as.numeric(dyadyrs$ccode1)
 dyadyrs$ccode2 <- as.numeric(dyadyrs$ccode2)
@@ -594,15 +664,17 @@ example_attgt <- att_gt(yname = "cowmidonset",
                         tname = "year",
                         idname = "id",
                         gname = "treatyr_sing",
-                        xformla = ~kappava,
+                        xformla = ~1,
                         data = dyadyrs,
                         base_period = "universal"
                         )
 example_attgt.dyn <- aggte(example_attgt, type = "dynamic", na.rm = TRUE, 
                            min_e = -10, max_e = 10)
 # summarize the results
-print(summary(example_attgt.dyn))
+summary(example_attgt.dyn)
 ggdid(example_attgt.dyn) + theme(text = element_text(family = "Crimson Text", size = 11))
+ggsave(filename = here::here("plots/sanann.png"), device = "png", limitsize = FALSE, dpi = 300)
+
 
 
 
@@ -617,26 +689,6 @@ sensitivity_results <-
 HonestDiD::createSensitivityPlot_relativeMagnitudes(sensitivity_results$robust_ci,
                                                     sensitivity_results$orig_ci)
 
-
-betahat <- summary(es_regdat)$coefficients #save the coefficients
-sigma <- summary(es_regdat)$cov.scaled #save the covariance matrix
-
-delta_rm_results <- 
-HonestDiD::createSensitivityResults_relativeMagnitudes(
-                                    betahat = betahat, #coefficients
-                                    sigma = sigma, #covariance matrix
-                                    numPrePeriods = 9, #num. of pre-treatment coefs
-                                    numPostPeriods = 9, #num. of post-treatment coefs
-                                    Mbarvec = seq(0.5,2,by=0.5) #values of Mbar
-                                    )
-
-delta_rm_results
-originalResults <- HonestDiD::constructOriginalCS(betahat = betahat,
-                                                  sigma = sigma,
-                                                  numPrePeriods = 5,
-                                                  numPostPeriods = 2)
-
-HonestDiD::createSensitivityPlot_relativeMagnitudes(delta_rm_results, originalResults)
 ```
 
 
