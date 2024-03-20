@@ -148,7 +148,7 @@ dyadyrs <- dyadyrs %>%
     ) %>%
   ungroup() %>%
   select(-regchayr)
-dyadyrs[dyadyrs$treatyr_sing == Inf] <- NA
+dyadyrs$treatyr_sing[dyadyrs$treatyr_sing == Inf] <- NA
 #dyadyrs <- dyadyrs %>%
 #  group_by(id) %>%
 #  mutate(
@@ -236,7 +236,7 @@ ggsave(filename = here::here("plots/regime1945.png"), device = "png",
 
 ```{r Effect Size}
 ees <- feols(cowmidonset ~ regcha_uni | year + ccode1 + ccode2, data = dyadyrs)
-etable(ees, file = here::here("tables/ees.tex"))
+etable(ees, file = here::here("tables/ees.tex"), view = TRUE)
 
 mde <- pwr::pwr.t.test(n = n_distinct(dyadyrs)/2, d = NULL, 
                        sig.level = 0.05, power = 0.8, 
@@ -258,8 +258,25 @@ pta <- dyadyrs %>%
     treatyr = unique(treatyr_sing)
   )
 
+fractions = dyadyrs %>% 
+  group_by(year) %>% 
+  summarize(
+    dyads = n_distinct(id),
+    indyads = sum(regcha_uni, na.rm=TRUE),
+    fracmid = mean(cowmidonset, na.rm=TRUE))
+
+ggplot(data=fractions,aes(x=year)) + 
+  ggthemes::theme_clean(base_size=11) + 
+  xlab("Year") +
+  geom_line(aes(y=fracmid), col="darkred") +
+  #geom_line(aes(y=indyads*0.01), col="blue") +
+  scale_y_continuous(
+    name="Fraction Default",
+    sec.axis = sec_axis(~./0.01,name="Number in Bureau"))
+
+
 pta_model <- feols(treatyr ~ avg_mid, data = pta)
-etable(pta_model, file = here::here("tables/pta.tex"))
+etable(pta_model, file = here::here("tables/pta.tex"), view = TRUE)
 
 ggplot(pta, aes(x = treatyr, y = avg_mid)) +
   geom_smooth(method = "lm", se = TRUE) + 
@@ -357,7 +374,7 @@ m2.2 <- feols(cowmidonset ~ regcha_uni +
                 trade_dyd + gdppc_dyd + nmc_dyd | 
                 ccode1 + ccode2 + year, 
               cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m2.1,m2.2, file = here::here("tables/2.tex"))
+etable(m2.1,m2.2, file = here::here("tables/2.tex"), view = TRUE)
 
 # Key Explanatory Variable 2 Without Covariates
 m3.1 <- feols(cowmidonset ~ regcha_uni + 
@@ -376,7 +393,7 @@ m3.4 <- feols(cowmidonset ~ regcha_uni  +
                 ongoingrivalry + regcha_uni:ongoingrivalry | 
                 ccode1 + ccode2 + year, 
               cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m3.1, m3.2, m3.3, m3.4, file = here::here("tables/etr.tex"))
+etable(m3.1, m3.2, m3.3, m3.4, file = here::here("tables/etr.tex"), view = TRUE)
 
 # TWFE With Two Key Explanatory Variables With Covariates
 m4 <- feols(cowmidonset ~ regcha_uni + 
@@ -406,7 +423,7 @@ es_reg <- feols(cowmidonset ~ factor(tau) + factor(tau):kappava | ccode1 + ccode
                 cluster = c("year", "ccode1", "ccode2"), 
                 data = filter(es, tau >= -9 & tau <= 8))
 
-etable(es_reg, file = here::here("tables/esreg.tex"))
+etable(es_reg, file = here::here("tables/esreg.tex"), view = TRUE)
 
 es_regdat <- as_tibble(es_reg$coeftable)
 es_regdat <- es_regdat[18:35,]
