@@ -312,11 +312,11 @@ ggplot(data=fractions,aes(x=year)) +
 
 ## TWFE
 
-```{r TWFE}
+```{r Matching}
 mdyadyrs <- dyadyrs %>%
   drop_na(regcha_uni, ongoingrivalry, alliance, major,
           mindist, trade_dyd, gdppc_dyd, nmc_dyd)
-m.out <- matchit(regcha_uni ~ ongoingrivalry +
+#m.out <- matchit(regcha_uni ~ ongoingrivalry +
              alliance +
              major +
              mindist + I(mindist^2) +
@@ -327,8 +327,11 @@ m.out <- matchit(regcha_uni ~ ongoingrivalry +
 summary(m.out, un = FALSE)
 
 
+ps_model <- glm(treat ~ covariate1 + covariate2 + ... , data = data, family = binomial)
+```
 
 
+```{r TWFE}
 # OLS
 m <- feols(cowmidonset ~ regcha_uni + 
              kappava + regcha_uni:kappava + 
