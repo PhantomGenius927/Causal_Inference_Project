@@ -15,6 +15,7 @@ library(peacesciencer)
 library(ggplot2)
 library(tidyverse)
 library(did)
+library(MatchIt)
 ```
 
 ##Data Wrangling
@@ -24,7 +25,7 @@ ids <- c("ccode1", "ccode2", "country1", "country2", "year")
 
 # Outcome Variable
 ## MID onsets
-dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1945:1960)) %>%
+dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1945:2014)) %>%
   add_cow_mids() %>%
   mutate(
     country1 = countrycode::countrycode(ccode1, 
@@ -70,7 +71,11 @@ dyadyrs <- dyadyrs %>%
 # Covariates
 ## alliance
 dyadyrs <- dyadyrs %>%
-  add_cow_alliance()
+  add_cow_alliance() %>%
+  mutate(
+    alliance = ifelse(cow_defense == 1 | cow_neutral== 1 | cow_nonagg == 1 | cow_entente == 1, 1, 0)
+  ) %>%
+  select(-c(cow_defense, cow_neutral, cow_nonagg, cow_entente))
 
 ## major power
 dyadyrs <- dyadyrs %>%
@@ -182,10 +187,7 @@ da <- dyadyrs %>%
     regime = sum(regcha_uni, na.rm = TRUE),
     avg_kappava = mean(kappava, na.rm = TRUE),
     sd_kappava = sd(kappava, na.rm = TRUE),
-    defense = sum(cow_defense, na.rm = TRUE),
-    neutral = sum(cow_neutral, na.rm = TRUE),
-    nonagg = sum(cow_nonagg, na.rm = TRUE),
-    entente = sum(cow_entente, na.rm = TRUE),
+    alliance = sum(alliance, na.rm = TRUE),
     major = sum(major, na.rm = TRUE),
     rivalry = sum(ongoingrivalry, na.rm = TRUE),
     avg_gdppc = mean(gdppc, na.rm = TRUE),
@@ -207,8 +209,6 @@ ggplot(data = da) +
   theme(text = element_text(family = "Crimson Text"))
 ggsave(filename = here::here("plots/onset.png"), device = "png", 
         width = 5, height = 3, units = "in", dpi = 300, limitsize = FALSE)
-da <- da %>%
-  filter(year <= 2000)
 
 ggplot(data = da) +
   geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
@@ -260,23 +260,6 @@ pta <- dyadyrs %>%
     treatyr = unique(treatyr_sing)
   )
 
-fractions = dyadyrs %>% 
-  group_by(year) %>% 
-  summarize(
-    dyads = n_distinct(id),
-    indyads = sum(regcha_uni, na.rm=TRUE),
-    fracmid = mean(cowmidonset, na.rm=TRUE))
-
-ggplot(data=fractions,aes(x=year)) + 
-  ggthemes::theme_clean(base_size=11) + 
-  xlab("Year") +
-  geom_line(aes(y=fracmid), col="darkred") +
-  #geom_line(aes(y=indyads*0.01), col="blue") +
-  scale_y_continuous(
-    name="Fraction Default",
-    sec.axis = sec_axis(~./0.01,name="Number in Bureau"))
-
-
 pta_model <- feols(treatyr ~ avg_mid, data = pta)
 etable(pta_model, file = here::here("tables/pta.tex"), view = TRUE)
 
@@ -290,6 +273,23 @@ ggplot(pta, aes(x = treatyr, y = avg_mid)) +
     caption = "Source: COW MIDs Dataset"
   )
 ggsave(filename = here::here("plots/paratrend.png"), device = "png", limitsize = FALSE, dpi = 300)
+
+
+fractions = dyadyrs %>% 
+  group_by(year) %>% 
+  summarize(
+    dyads = n_distinct(id),
+    indyads = sum(regcha_uni, na.rm=TRUE),
+    fracmid = mean(cowmidonset, na.rm=TRUE))
+
+ggplot(data=fractions,aes(x=year)) + 
+  ggthemes::theme_clean(base_size=11) + 
+  xlab("Year") +
+  geom_line(aes(y=fracmid), col="darkred") +
+  #geom_line(aes(y=indyads*0.01), col="blue") +
+  scale_y_continuous(
+    name="Fraction Default")
+    #sec.axis = sec_axis(~./0.01,name="Number in Bureau"))
 
 # multi-entry 
 #demo <- dyadyrs %>%
@@ -310,28 +310,30 @@ ggsave(filename = here::here("plots/paratrend.png"), device = "png", limitsize =
 
 ```
 
-## Statistical Analysis
+## TWFE
 
-```{r Statistical Analysis}
+```{r TWFE}
+mdyadyrs <- dyadyrs %>%
+  drop_na(regcha_uni, ongoingrivalry, alliance, major,
+          mindist, trade_dyd, gdppc_dyd, nmc_dyd)
+m.out <- matchit(regcha_uni ~ ongoingrivalry +
+             #alliance +
+             major +
+             mindist + I(mindist^2) +
+             trade_dyd + gdppc_dyd + nmc_dyd,
+             distance = "mahalanobis", data = mdyadyrs)
 
-covariates <- c("cow_defense", "cow_neutral", "cow_nonagg", "cow_entente", 
-                "major", "ongoingrivalry", 
-                "mindist",
-                "gdppc_dyd", "trade_dyd", "nmc_dyd")
+# Checking balance prior to matching
+summary(m.out, un = FALSE)
 
-media_test <- feols(c(cow_defense, cow_neutral, cow_nonagg, cow_entente, 
-                      major, ongoingrivalry, 
-                      mindist, I(mindist^2),
-                      gdppc_dyd, trade_dyd, nmc_dyd) ~ regcha_uni | 
-                      year + ccode1 + ccode2, data = dyadyrs)
-etable(media_test)
-# stevemisc::show_ranef(media_test)
+
+
 
 # OLS
 m <- feols(cowmidonset ~ regcha_uni + 
              kappava + regcha_uni:kappava + 
              ongoingrivalry + regcha_uni:ongoingrivalry +
-             cow_defense + cow_neutral + cow_nonagg + cow_entente +
+             alliance +
              major + regcha_uni:major + 
              mindist + regcha_uni:mindist + 
              I(mindist^2) + regcha_uni:I(mindist^2) +
@@ -360,7 +362,7 @@ etable(m1.1, m1.2, m1.3, m1.4)
 # TWFE with Key Explanatory Variables With Covariates
 m2.1 <- feols(cowmidonset ~ regcha_uni + 
                 ongoingrivalry + regcha_uni:ongoingrivalry +
-                cow_defense + cow_neutral + cow_nonagg + cow_entente +
+                alliance +
                 major + regcha_uni:major + 
                 mindist + regcha_uni:mindist + 
                 I(mindist^2) + regcha_uni:I(mindist^2) +
@@ -369,7 +371,7 @@ m2.1 <- feols(cowmidonset ~ regcha_uni +
               cluster = c("year", "id"), data = dyadyrs)
 m2.2 <- feols(cowmidonset ~ regcha_uni + 
                 ongoingrivalry + regcha_uni:ongoingrivalry +
-                cow_defense + cow_neutral + cow_nonagg + cow_entente +
+                alliance +
                 major + regcha_uni:major + 
                 mindist + regcha_uni:mindist + 
                 I(mindist^2) + regcha_uni:I(mindist^2) +
@@ -402,7 +404,7 @@ m4 <- feols(cowmidonset ~ regcha_uni +
               kappava + regcha_uni:kappava + 
               I(kappava^2) + regcha_uni:I(kappava^2) + 
               ongoingrivalry + regcha_uni:ongoingrivalry +
-              cow_defense + cow_neutral + cow_nonagg + cow_entente +
+              alliance +
               major + regcha_uni:major + 
               mindist + regcha_uni:mindist + 
               I(mindist^2) + regcha_uni:I(mindist^2) +
@@ -473,3 +475,19 @@ ggdid(example_attgt.dyn) + theme(text = element_text(family = "Crimson Text", si
 ```{r}
 
 ```
+
+```{r Mediation Analysis}
+covariates <- c("alliance", 
+                "major", "ongoingrivalry", 
+                "mindist",
+                "gdppc_dyd", "trade_dyd", "nmc_dyd")
+
+media_test <- feols(c(alliance, 
+                      major, ongoingrivalry, 
+                      mindist, I(mindist^2),
+                      gdppc_dyd, trade_dyd, nmc_dyd) ~ regcha_uni | 
+                      year + ccode1 + ccode2, data = dyadyrs)
+etable(media_test)
+# stevemisc::show_ranef(media_test)
+```
+
