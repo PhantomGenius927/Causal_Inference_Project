@@ -18,6 +18,7 @@ library(did)
 #library(MatchIt)
 library(HonestDiD)
 ```
+
 ```{r For Honest DiD}
 #' @title honest_did
 #'
@@ -453,7 +454,6 @@ etable(m, a, y, d, r, t, view = TRUE, file = here::here("tables/cset.tex"))
 
 ```
 
-
 ## TWFE
 
 ```{r Matching}
@@ -690,7 +690,6 @@ HonestDiD::createSensitivityPlot_relativeMagnitudes(sensitivity_results$robust_c
                                                     sensitivity_results$orig_ci)
 
 ```
-
 
 ```{r Mediation Analysis}
 covariates <- c("alliance", 
