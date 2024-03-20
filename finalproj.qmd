@@ -450,8 +450,6 @@ t <- feols(treatyr ~ rivalry, data = cset)
 
 
 etable(m, a, y, d, r, t, view = TRUE, file = here::here("tables/cset.tex"))
-# Display tables
-stargazer(m,a,y,, type = "text", )
 
 ```
 
@@ -478,89 +476,70 @@ stargazer(m,a,y,, type = "text", )
 ```
 
 ```{r TWFE}
-# OLS
-m <- feols(cowmidonset ~ regcha_uni + 
-             kappava + regcha_uni:kappava + 
-             ongoingrivalry + regcha_uni:ongoingrivalry +
-             alliance +
-             major + regcha_uni:major + 
-             mindist + regcha_uni:mindist + 
-             I(mindist^2) + regcha_uni:I(mindist^2) +
-             trade_dyd + gdppc_dyd + nmc_dyd, 
-           data = dyadyrs)
-etable(m)
+twfe1 <- feols(cowmidonset ~ regcha_uni | 
+              ccode1 + ccode2 + year, 
+              cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
 
-# Key Explanatory Variable 1 Without Covariates
-m1.1 <- feols(cowmidonset ~ regcha_uni + 
-                kappava + regcha_uni:kappava | 
-                id + year, 
-              data = dyadyrs)
-m1.2 <- feols(cowmidonset ~ regcha_uni + 
-                kappava + regcha_uni:kappava | 
-                id + year, 
-              cluster = c("year", "id"), data = dyadyrs)
-m1.3 <- feols(cowmidonset ~ regcha_uni + 
-                kappava + regcha_uni:kappava | 
-              ccode1 + ccode2 + year, data = dyadyrs)
-m1.4 <- feols(cowmidonset ~ regcha_uni  + 
+twfe2 <- feols(cowmidonset ~ regcha_uni  + 
                 kappava + regcha_uni:kappava | 
               ccode1 + ccode2 + year, 
               cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m1.1, m1.2, m1.3, m1.4)
 
-# TWFE with Key Explanatory Variables With Covariates
-m2.1 <- feols(cowmidonset ~ regcha_uni + 
-                ongoingrivalry + regcha_uni:ongoingrivalry +
-                alliance +
-                major + regcha_uni:major + 
-                mindist + regcha_uni:mindist + 
-                I(mindist^2) + regcha_uni:I(mindist^2) +
-                trade_dyd + gdppc_dyd + nmc_dyd | 
-                id + year, 
-              cluster = c("year", "id"), data = dyadyrs)
-m2.2 <- feols(cowmidonset ~ regcha_uni + 
-                ongoingrivalry + regcha_uni:ongoingrivalry +
-                alliance +
-                major + regcha_uni:major + 
-                mindist + regcha_uni:mindist + 
-                I(mindist^2) + regcha_uni:I(mindist^2) +
-                trade_dyd + gdppc_dyd + nmc_dyd | 
-                ccode1 + ccode2 + year, 
-              cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m2.1,m2.2, file = here::here("tables/2.tex"), view = TRUE)
-
-# Key Explanatory Variable 2 Without Covariates
-m3.1 <- feols(cowmidonset ~ regcha_uni + 
-                ongoingrivalry + regcha_uni:ongoingrivalry | 
-                id + year, 
-              data = dyadyrs)
-m3.2 <- feols(cowmidonset ~ regcha_uni + 
-                ongoingrivalry + regcha_uni:ongoingrivalry | 
-                id + year, 
-              cluster = c("year", "id"), data = dyadyrs)
-m3.3 <- feols(cowmidonset ~ regcha_uni + 
-                ongoingrivalry + regcha_uni:ongoingrivalry | 
-                ccode1 + ccode2 + year, 
-              data = dyadyrs)
-m3.4 <- feols(cowmidonset ~ regcha_uni  + 
-                ongoingrivalry + regcha_uni:ongoingrivalry | 
-                ccode1 + ccode2 + year, 
-              cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m3.1, m3.2, m3.3, m3.4, file = here::here("tables/etr.tex"), view = TRUE)
-
-# TWFE With Two Key Explanatory Variables With Covariates
-m4 <- feols(cowmidonset ~ regcha_uni + 
-              kappava + regcha_uni:kappava + 
-              I(kappava^2) + regcha_uni:I(kappava^2) + 
-              ongoingrivalry + regcha_uni:ongoingrivalry +
-              alliance +
-              major + regcha_uni:major + 
-              mindist + regcha_uni:mindist + 
-              I(mindist^2) + regcha_uni:I(mindist^2) +
-              trade_dyd + gdppc_dyd + nmc_dyd | 
+twfe3 <- feols(cowmidonset ~ regcha_uni  + 
+                kappava + regcha_uni:kappava +
+                 ongoingrivalry + 
+                 alliance + 
+                 major + 
+                 mindist + I(mindist^2) +
+                 trade_dyd + gdppc_dyd + nmc_dyd | 
               ccode1 + ccode2 + year, 
-            cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m4, view = TRUE)
+              cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
+
+twfe4 <- feols(cowmidonset ~ regcha_uni  + 
+                kappava + regcha_uni:kappava +
+                 ongoingrivalry + 
+                 alliance + 
+                 major + 
+                 mindist + I(mindist^2) +
+                 trade_dyd + gdppc_dyd + nmc_dyd | 
+              id + year, 
+              cluster = c("year", "id"), data = dyadyrs)
+
+twfe5 <- feols(cowmidonset ~ regcha_uni  + 
+                kappava + regcha_uni:kappava +
+                 ongoingrivalry + regcha_uni:ongoingrivalry +
+                 alliance + regcha_uni:alliance +
+                 major + 
+                 mindist + regcha_uni:mindist + I(mindist^2) + regcha_uni:I(mindist^2) +
+                 trade_dyd + gdppc_dyd + 
+                   nmc_dyd + regcha_uni:nmc_dyd | 
+              ccode1 + ccode2 + year, 
+              cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
+etable(twfe2, twfe4, twfe3, twfe5, view = TRUE, file = here::here("tables/twfe.tex"))
+
+twfe_betahat <- summary(twfe5)$coefficients #save the coefficients
+twfe_sigma <- summary(twfe5)$cov.scaled #save the covariance matrix
+
+twfe_betahat <- twfe_betahat["regcha_uni:kappava"]
+twfe_sigma <-twfe_sigma["regcha_uni:kappava", "regcha_uni:kappava"]
+delta_rm_results <- 
+HonestDiD::createSensitivityResults_relativeMagnitudes(
+                                    betahat = twfe_betahat, #coefficients
+                                    sigma = twfe_sigma, #covariance matrix
+                                    numPrePeriods = 1, #num. of pre-treatment coefs
+                                    numPostPeriods = 1, #num. of post-treatment coefs
+                                    Mbarvec = seq(0.5,2,by=0.5) #values of Mbar
+                                    )
+
+delta_rm_results
+
+originalResults <- HonestDiD::constructOriginalCS(betahat = betahat,
+                                                  sigma = sigma,
+                                                  numPrePeriods = 5,
+                                                  numPostPeriods = 2)
+
+HonestDiD::createSensitivityPlot_relativeMagnitudes(delta_rm_results, originalResults)
+
 ```
 
 ## Event Study
