@@ -353,7 +353,12 @@ etable(ees, file = here::here("tables/ees.tex"), view = TRUE)
 mde <- pwr::pwr.t.test(n = n_distinct(dyadyrs)/2, d = NULL, 
                        sig.level = 0.05, power = 0.8, 
                        type="two.sample", alternative="two.sided")
+
+font <- "Crimson Text" # Change to your desired font
+png(file.path("plots", "mde.png"), res = 300, width = 5, height = 3, units = "in")
+par(family = font)
 plot(mde)
+dev.off()
 ```
 
 ## Parallel Trend Analysis
@@ -379,7 +384,7 @@ ggplot(pta, aes(x = treatyr, y = avg_mid)) +
   theme(text = element_text(family = "Crimson Text")) + 
   labs(
     x = "Year of Regime Change",
-    y = "Mean Change of Militarized Interstate Dispute's Possibility",
+    y = "Average Change of Militarized Interstate Dispute's Possibility",
     caption = "Source: COW MIDs Dataset"
   )
 ggsave(filename = here::here("plots/paratrend.png"), device = "png", limitsize = FALSE, dpi = 300)
@@ -395,8 +400,8 @@ fractions = dyadyrs %>%
 ggplot(data=fractions,aes(x=year)) + 
   ggthemes::theme_clean(base_size=11) + 
   xlab("Year") +
-  geom_line(aes(y=fracmid), col="darkred") +
-  #geom_line(aes(y=indyads*0.01), col="blue") +
+  #geom_line(aes(y=fracmid), col="darkred") +
+  geom_line(aes(y=indyads*0.01), col="blue") +
   scale_y_continuous(
     name="Fraction Default")
     #sec.axis = sec_axis(~./0.01,name="Number in Bureau"))
@@ -419,6 +424,37 @@ ggplot(data=fractions,aes(x=year)) +
 #  geom_smooth(aes(y = avg_mid), se = TRUE)
 
 ```
+
+## Cross-sectional Endogeneity Test
+
+```{r}
+cset <- dyadyrs %>%
+  group_by(id)  %>%
+  summarise(
+    treatyr = unique(treatyr_sing),
+    avg_kappava = mean(kappava, na.rm = TRUE),
+    alliance = mean(alliance, na.rm = TRUE),
+    major = mean(major, na.rm = TRUE),
+    rivalry = mean(ongoingrivalry, na.rm = TRUE),
+    avg_gdppc = mean(gdppc, na.rm = TRUE),
+    avg_trade = mean(trade, na.rm = TRUE),
+    avg_nmc = mean(nc, na.rm = TRUE),
+  )
+
+m <- feols(treatyr ~ avg_gdppc, data = cset)
+a <- feols(treatyr ~ avg_trade, data = cset)
+y <- feols(treatyr ~ avg_nmc, data = cset)
+d <- feols(treatyr ~ major, data = cset)
+r <- feols(treatyr ~ alliance, data = cset)
+t <- feols(treatyr ~ rivalry, data = cset)
+
+
+etable(m, a, y, d, r, t, view = TRUE, file = here::here("tables/cset.tex"))
+# Display tables
+stargazer(m,a,y,, type = "text", )
+
+```
+
 
 ## TWFE
 
@@ -524,7 +560,7 @@ m4 <- feols(cowmidonset ~ regcha_uni +
               trade_dyd + gdppc_dyd + nmc_dyd | 
               ccode1 + ccode2 + year, 
             cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
-etable(m4)
+etable(m4, view = TRUE)
 ```
 
 ## Event Study
@@ -624,11 +660,6 @@ originalResults <- HonestDiD::constructOriginalCS(betahat = betahat,
 HonestDiD::createSensitivityPlot_relativeMagnitudes(delta_rm_results, originalResults)
 ```
 
-## Cross-sectional Endogeneity Test
-
-```{r}
-
-```
 
 ```{r Mediation Analysis}
 covariates <- c("alliance", 
