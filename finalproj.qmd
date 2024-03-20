@@ -153,7 +153,7 @@ dyadyrs <- dyadyrs %>%
     ) %>%
   ungroup() %>%
   select(-regchayr)
-dyadyrs$treatyr_sing[dyadyrs$treatyr_sing == Inf] <- NA
+#dyadyrs$treatyr_sing[dyadyrs$treatyr_sing == Inf] <- NA
 #dyadyrs <- dyadyrs %>%
 #  group_by(id) %>%
 #  mutate(
@@ -328,7 +328,7 @@ ggplot(data=fractions,aes(x=year)) +
 
 
 #ps_model <- glm(regcha_uni ~ ongoingrivalry +
-               factor(year) + factor(id), data = mdyadyrs, family = binomial)
+#               factor(year) + factor(id), data = mdyadyrs, family = binomial)
 ```
 
 
@@ -463,7 +463,7 @@ example_attgt <- att_gt(yname = "cowmidonset",
                         tname = "year",
                         idname = "id",
                         gname = "treatyr_sing",
-                        #xformla = ~1,
+                        xformla = ~1,
                         control_group = "notyettreated",
                         data = dyadyrs
                         )
