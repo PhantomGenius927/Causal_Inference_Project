@@ -15,7 +15,7 @@ library(peacesciencer)
 library(ggplot2)
 library(tidyverse)
 library(did)
-library(MatchIt)
+#library(MatchIt)
 ```
 
 ##Data Wrangling
@@ -173,7 +173,7 @@ dyadyrs$treatyr_sing[dyadyrs$treatyr_sing == Inf] <- NA
 #  group_by(id, treatyr_multi) %>%
 #  mutate(
 #    case_id = min(case_id, na.rm = TRUE)
-#  ) %>%
+# ) %>%
 #  ungroup()
 ```
 
@@ -313,21 +313,22 @@ ggplot(data=fractions,aes(x=year)) +
 ## TWFE
 
 ```{r Matching}
-mdyadyrs <- dyadyrs %>%
-  drop_na(regcha_uni, ongoingrivalry, alliance, major,
-          mindist, trade_dyd, gdppc_dyd, nmc_dyd)
+#mdyadyrs <- dyadyrs %>%
+#  drop_na(regcha_uni, ongoingrivalry, alliance, major,
+#          mindist, trade_dyd, gdppc_dyd, nmc_dyd)
 #m.out <- matchit(regcha_uni ~ ongoingrivalry +
-             alliance +
-             major +
-             mindist + I(mindist^2) +
-             trade_dyd + gdppc_dyd + nmc_dyd,
-             distance = "mahalanobis", data = mdyadyrs)
+#             alliance +
+#             major +
+#             mindist + I(mindist^2) +
+#             trade_dyd + gdppc_dyd + nmc_dyd,
+#             distance = "mahalanobis", data = mdyadyrs)
 
 # Checking balance prior to matching
-summary(m.out, un = FALSE)
+#summary(m.out, un = FALSE)
 
 
-ps_model <- glm(treat ~ covariate1 + covariate2 + ... , data = data, family = binomial)
+#ps_model <- glm(regcha_uni ~ ongoingrivalry +
+               factor(year) + factor(id), data = mdyadyrs, family = binomial)
 ```
 
 
