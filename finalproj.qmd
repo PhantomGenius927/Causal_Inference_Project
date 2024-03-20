@@ -331,7 +331,6 @@ ggplot(data=fractions,aes(x=year)) +
 #               factor(year) + factor(id), data = mdyadyrs, family = binomial)
 ```
 
-
 ```{r TWFE}
 # OLS
 m <- feols(cowmidonset ~ regcha_uni + 
