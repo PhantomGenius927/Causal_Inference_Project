@@ -16,6 +16,116 @@ library(ggplot2)
 library(tidyverse)
 library(did)
 #library(MatchIt)
+library(HonestDiD)
+```
+```{r For Honest DiD}
+#' @title honest_did
+#'
+#' @description a function to compute a sensitivity analysis
+#'  using the approach of Rambachan and Roth (2021)
+honest_did <- function(...) UseMethod("honest_did")
+
+#' @title honest_did.AGGTEobj
+#'
+#' @description a function to compute a sensitivity analysis
+#'  using the approach of Rambachan and Roth (2021) when
+#'  the event study is estimating using the `did` package
+#'
+#' @param e event time to compute the sensitivity analysis for.
+#'  The default value is `e=0` corresponding to the "on impact"
+#'  effect of participating in the treatment.
+#' @param type Options are "smoothness" (which conducts a
+#'  sensitivity analysis allowing for violations of linear trends
+#'  in pre-treatment periods) or "relative_magnitude" (which
+#'  conducts a sensitivity analysis based on the relative magnitudes
+#'  of deviations from parallel trends in pre-treatment periods).
+#' @inheritParams HonestDiD::createSensitivityResults
+#' @inheritParams HonestDid::createSensitivityResults_relativeMagnitudes
+honest_did.AGGTEobj <- function(es,
+                                e          = 0,
+                                type       = c("smoothness", "relative_magnitude"),
+                                gridPoints = 100,
+                                ...) {
+
+  type <- match.arg(type)
+
+  # Make sure that user is passing in an event study
+  if (es$type != "dynamic") {
+    stop("need to pass in an event study")
+  }
+
+  # Check if used universal base period and warn otherwise
+  if (es$DIDparams$base_period != "universal") {
+    stop("Use a universal base period for honest_did")
+  }
+
+  # Recover influence function for event study estimates
+  es_inf_func <- es$inf.function$dynamic.inf.func.e
+
+  # Recover variance-covariance matrix
+  n <- nrow(es_inf_func)
+  V <- t(es_inf_func) %*% es_inf_func / n / n
+
+  # Check time vector is consecutive with referencePeriod = -1
+  referencePeriod <- -1
+  consecutivePre  <- !all(diff(es$egt[es$egt <= referencePeriod]) == 1)
+  consecutivePost <- !all(diff(es$egt[es$egt >= referencePeriod]) == 1)
+  if ( consecutivePre | consecutivePost ) {
+    msg <- "honest_did expects a time vector with consecutive time periods;"
+    msg <- paste(msg, "please re-code your event study and interpret the results accordingly.", sep="\n")
+    stop(msg)
+  }
+
+  # Remove the coefficient normalized to zero
+  hasReference <- any(es$egt == referencePeriod)
+  if ( hasReference ) {
+    referencePeriodIndex <- which(es$egt == referencePeriod)
+    V    <- V[-referencePeriodIndex,-referencePeriodIndex]
+    beta <- es$att.egt[-referencePeriodIndex]
+  } else {
+    beta <- es$att.egt
+  }
+
+  nperiods <- nrow(V)
+  npre     <- sum(1*(es$egt < referencePeriod))
+  npost    <- nperiods - npre
+  if ( !hasReference & (min(c(npost, npre)) <= 0) ) {
+    if ( npost <= 0 ) {
+      msg <- "not enough post-periods"
+    } else {
+      msg <- "not enough pre-periods"
+    }
+    msg <- paste0(msg, " (check your time vector; note honest_did takes -1 as the reference period)")
+    stop(msg)
+  }
+
+  baseVec1 <- basisVector(index=(e+1),size=npost)
+  orig_ci  <- constructOriginalCS(betahat        = beta,
+                                  sigma          = V,
+                                  numPrePeriods  = npre,
+                                  numPostPeriods = npost,
+                                  l_vec          = baseVec1)
+
+  if (type=="relative_magnitude") {
+    robust_ci <- createSensitivityResults_relativeMagnitudes(betahat        = beta,
+                                                             sigma          = V,
+                                                             numPrePeriods  = npre,
+                                                             numPostPeriods = npost,
+                                                             l_vec          = baseVec1,
+                                                             gridPoints     = gridPoints,
+                                                             ...)
+
+  } else if (type == "smoothness") {
+    robust_ci <- createSensitivityResults(betahat        = beta,
+                                          sigma          = V,
+                                          numPrePeriods  = npre,
+                                          numPostPeriods = npost,
+                                          l_vec          = baseVec1,
+                                          ...)
+  }
+
+  return(list(robust_ci=robust_ci, orig_ci=orig_ci, type=type))
+}
 ```
 
 ##Data Wrangling
@@ -456,21 +566,62 @@ ggplot(data = es_regdat, aes(x = tau, y = Est)) +
   geom_smooth(data = subset(es_regdat, tau >= 0), se = TRUE)
 ggsave(filename = here::here("plots/leadslags.png"), device = "png", limitsize = FALSE, dpi = 300)
 
+
 dyadyrs$id <- as.numeric(dyadyrs$id)
+dyadyrs$ccode1 <- as.numeric(dyadyrs$ccode1)
+dyadyrs$ccode2 <- as.numeric(dyadyrs$ccode2)
+
+#dyadyrs %>%
+#  drop_na(regcha_uni, ongoingrivalry, alliance, major,
+#          mindist, trade_dyd, gdppc_dyd, nmc_dyd)
 
 example_attgt <- att_gt(yname = "cowmidonset",
                         tname = "year",
                         idname = "id",
                         gname = "treatyr_sing",
-                        xformla = ~1,
-                        control_group = "notyettreated",
-                        data = dyadyrs
+                        xformla = ~kappava,
+                        data = dyadyrs,
+                        base_period = "universal"
                         )
 example_attgt.dyn <- aggte(example_attgt, type = "dynamic", na.rm = TRUE, 
                            min_e = -10, max_e = 10)
 # summarize the results
 print(summary(example_attgt.dyn))
 ggdid(example_attgt.dyn) + theme(text = element_text(family = "Crimson Text", size = 11))
+
+
+
+
+
+sensitivity_results <-
+  honest_did(example_attgt.dyn,
+             e=0,
+             type="relative_magnitude",
+             Mbarvec=seq(from = 0.5, to = 2, by = 0.5))
+
+HonestDiD::createSensitivityPlot_relativeMagnitudes(sensitivity_results$robust_ci,
+                                                    sensitivity_results$orig_ci)
+
+
+betahat <- summary(es_regdat)$coefficients #save the coefficients
+sigma <- summary(es_regdat)$cov.scaled #save the covariance matrix
+
+delta_rm_results <- 
+HonestDiD::createSensitivityResults_relativeMagnitudes(
+                                    betahat = betahat, #coefficients
+                                    sigma = sigma, #covariance matrix
+                                    numPrePeriods = 9, #num. of pre-treatment coefs
+                                    numPostPeriods = 9, #num. of post-treatment coefs
+                                    Mbarvec = seq(0.5,2,by=0.5) #values of Mbar
+                                    )
+
+delta_rm_results
+originalResults <- HonestDiD::constructOriginalCS(betahat = betahat,
+                                                  sigma = sigma,
+                                                  numPrePeriods = 5,
+                                                  numPostPeriods = 2)
+
+HonestDiD::createSensitivityPlot_relativeMagnitudes(delta_rm_results, originalResults)
 ```
 
 ## Cross-sectional Endogeneity Test
