@@ -15,7 +15,6 @@ library(peacesciencer)
 library(ggplot2)
 library(tidyverse)
 library(did)
-#library(MatchIt)
 library(HonestDiD)
 ```
 
@@ -133,8 +132,9 @@ honest_did.AGGTEobj <- function(es,
 
 ```{r Data Wrangling}
 ids <- c("ccode1", "ccode2", "country1", "country2", "year")
-
+#-------------------------------------------------------------------------------
 # Outcome Variable
+#-------------------------------------------------------------------------------
 ## MID onsets
 dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1945:2010)) %>%
   add_cow_mids() %>%
@@ -145,8 +145,9 @@ dyadyrs <- create_dyadyears(directed = FALSE, subset_years = c(1945:2010)) %>%
                                         origin = "cown", destination = "iso3c")  
     ) %>%
   select(all_of(ids), cowmidonset)
-
+#-------------------------------------------------------------------------------
 # Explanatory Variable
+#-------------------------------------------------------------------------------
 ## regime change
 polityIV <- readxl::read_xls(here::here("raw data/p4v2018.xls"))
 polityIV <- polityIV %>%
@@ -178,8 +179,9 @@ dyadyrs <- dyadyrs %>%
 dyadyrs <- dyadyrs %>%
   add_fpsim() %>%
   select(all_of(ids), cowmidonset, regcha_uni, piva, kappava)
-
+#-------------------------------------------------------------------------------
 # Covariates
+#-------------------------------------------------------------------------------
 ## alliance
 dyadyrs <- dyadyrs %>%
   add_cow_alliance() %>%
@@ -244,8 +246,9 @@ dyadyrs <- dyadyrs %>%
     ) %>%
   ungroup() %>%
   select(all_of(v_ids), nc, nmc_dyd)
-
-## create unique id
+#-------------------------------------------------------------------------------
+# create unique id
+#-------------------------------------------------------------------------------
 dyadyrs <- dyadyrs %>%
   mutate(
     id = paste(ccode1, ccode2, sep = "0")
@@ -264,33 +267,14 @@ dyadyrs <- dyadyrs %>%
     ) %>%
   ungroup() %>%
   select(-regchayr)
-#dyadyrs$treatyr_sing[dyadyrs$treatyr_sing == Inf] <- NA
-#dyadyrs <- dyadyrs %>%
-#  group_by(id) %>%
-#  mutate(
-#    regchayr = ifelse(regcha_uni == 1, year, NA),
-#    treatyr_sing = min(regchayr, na.rm = TRUE),
-#    treatyr_multi = regchayr
-#  ) %>%
-#  fill(treatyr_multi, .direction = "down") %>%
-#  ungroup() %>%
-#  select(-regchayr)
-
-## unique cases id for multi-entry year dyads
-#dyadyrs <- dyadyrs %>%
-#  mutate(
-#    case_id = row_number()
-#  ) %>%
-#  group_by(id, treatyr_multi) %>%
-#  mutate(
-#    case_id = min(case_id, na.rm = TRUE)
-# ) %>%
-#  ungroup()
 ```
 
 ## Descriptive Analysis
 
 ```{r}
+#-------------------------------------------------------------------------------
+# Aggregate Average-Year Data
+#-------------------------------------------------------------------------------
 da <- dyadyrs %>%
   group_by(year) %>%
   summarise(
@@ -308,7 +292,10 @@ da <- dyadyrs %>%
     avg_nmc = mean(nc, na.rm = TRUE),
     sd_nmc = sd(nc, na.rm = TRUE)
   )
-
+#-------------------------------------------------------------------------------
+# plotting
+#-------------------------------------------------------------------------------
+# Onsets
 ggplot(data = da) +
   geom_line(aes(x = year, y = onset), color = "darkred", linewidth = 0.7) + 
   labs(
@@ -321,6 +308,7 @@ ggplot(data = da) +
 ggsave(filename = here::here("plots/onset.png"), device = "png", 
         width = 5, height = 3, units = "in", dpi = 300, limitsize = FALSE)
 
+# Regime Change
 ggplot(data = da) +
   geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
   labs(
@@ -331,19 +319,8 @@ ggplot(data = da) +
   theme(text = element_text(family = "Crimson Text"))
 ggsave(filename = here::here("plots/regime1945.png"), device = "png", 
         width = 5, height = 3, units = "in", dpi = 300, limitsize = FALSE)
-
-#ggplot(data = da) +
-#  geom_line(aes(x = year, y = regime), color = "darkgoldenrod1", linewidth = 0.7) + 
-#  labs(
-#    x = "Year",
-#    y = "Numbers of Dyads with Regime Change",
-#   caption = "Source: Polity IV Project (2018)"
-#  ) + ggthemes::theme_clean(base_size = 11) + 
-#  geom_vline(xintercept = 1945, color = "black") +
-#  theme(text = element_text(family = "Crimson Text"))
-#ggsave(filename = here::here("plots/regime1816.png"), device = "png", 
-#       width = 5, height = 3, units = "in", dpi = 300, limitsize = FALSE)
 ```
+
 
 ## Effect Size
 
@@ -365,7 +342,9 @@ dev.off()
 ## Parallel Trend Analysis
 
 ```{r Parallel Trend Analysis}
+#-------------------------------------------------------------------------------
 # single entry
+#-------------------------------------------------------------------------------
 pta <- dyadyrs %>%
   group_by(id) %>%
   mutate(
@@ -378,7 +357,9 @@ pta <- dyadyrs %>%
 
 pta_model <- feols(treatyr ~ avg_mid, data = pta)
 etable(pta_model, file = here::here("tables/pta.tex"), view = TRUE)
-
+#-------------------------------------------------------------------------------
+# plotting
+#-------------------------------------------------------------------------------
 ggplot(pta, aes(x = treatyr, y = avg_mid)) +
   geom_smooth(method = "lm", se = TRUE) + 
   ggthemes::theme_clean(base_size = 11) +
@@ -406,24 +387,6 @@ ggplot(data=fractions,aes(x=year)) +
   scale_y_continuous(
     name="Fraction Default")
     #sec.axis = sec_axis(~./0.01,name="Number in Bureau"))
-
-# multi-entry 
-#demo <- dyadyrs %>%
-#  group_by(case_id) %>%
-#  mutate(
-#    mid = cowmidonset - lag(cowmidonset) # try n = 5
-#  ) %>%
-#  summarise(
-#    avg_mid = mean(mid, na.rm = TRUE),
-#    treatyr_multi = unique(treatyr_multi)
-#  )
-
-#idk <- feols(treatyr_multi ~ avg_mid, data = demo)
-#etable(idk)
-
-#ggplot(demo, aes(x = treatyr_multi)) +
-#  geom_smooth(aes(y = avg_mid), se = TRUE)
-
 ```
 
 ## Cross-sectional Endogeneity Test
@@ -449,31 +412,10 @@ d <- feols(treatyr ~ major, data = cset)
 r <- feols(treatyr ~ alliance, data = cset)
 t <- feols(treatyr ~ rivalry, data = cset)
 
-
 etable(m, a, y, d, r, t, view = TRUE, file = here::here("tables/cset.tex"))
-
 ```
 
 ## TWFE
-
-```{r Matching}
-#mdyadyrs <- dyadyrs %>%
-#  drop_na(regcha_uni, ongoingrivalry, alliance, major,
-#          mindist, trade_dyd, gdppc_dyd, nmc_dyd)
-#m.out <- matchit(regcha_uni ~ ongoingrivalry +
-#             alliance +
-#             major +
-#             mindist + I(mindist^2) +
-#             trade_dyd + gdppc_dyd + nmc_dyd,
-#             distance = "mahalanobis", data = mdyadyrs)
-
-# Checking balance prior to matching
-#summary(m.out, un = FALSE)
-
-
-#ps_model <- glm(regcha_uni ~ ongoingrivalry +
-#               factor(year) + factor(id), data = mdyadyrs, family = binomial)
-```
 
 ```{r TWFE}
 twfe1 <- feols(cowmidonset ~ regcha_uni | 
@@ -516,20 +458,18 @@ twfe5 <- feols(cowmidonset ~ regcha_uni  +
               ccode1 + ccode2 + year, 
               cluster = c("year", "ccode1", "ccode2"), data = dyadyrs)
 etable(twfe2, twfe4, twfe3, twfe5, view = TRUE, file = here::here("tables/twfe.tex"))
-
-twfe_betahat <- summary(twfe5)$coefficients #save the coefficients
-twfe_sigma <- summary(twfe5)$cov.scaled #save the covariance matrix
 ```
 
 ## Event Study
 
 ```{r Event Study, Manually}
-# tau
+#-------------------------------------------------------------------------------
+# creating tau and TWFE
+#-------------------------------------------------------------------------------
 es <- dyadyrs %>%
   mutate(
     tau = year - treatyr_sing,
   )
-
 es_reg <- feols(cowmidonset ~ factor(tau) + 
                   kappava + factor(tau):kappava + 
                   ongoingrivalry + 
@@ -542,9 +482,10 @@ es_reg <- feols(cowmidonset ~ factor(tau) +
                 data = filter(es, tau >= -10 & tau <= 10))
 
 etable(es_reg, file = here::here("tables/esreg.tex"), view = TRUE)
-
 es_regdat <- as_tibble(es_reg$coeftable)
-
+#-------------------------------------------------------------------------------
+# plotting leads & lags
+#-------------------------------------------------------------------------------
 # regime change
 es_regdat_rg <- es_regdat[1:20,]
 es_regdat_rg$tau = -9:10
@@ -569,7 +510,9 @@ ggplot(data = es_regdat_rg, aes(x = tau, y = Est)) +
   geom_smooth(data = subset(es_regdat_rg, tau >= 0), se = TRUE)
 ggsave(filename = here::here("plots/leadslags.png"), device = "png", 
        width =5, height = 3, units = "in", limitsize = FALSE, dpi = 300)
-
+#-------------------------------------------------------------------------------
+# Sensitivity Test for Regime Change
+#-------------------------------------------------------------------------------
 betahat_rg <- summary(es_reg)$coefficients #save the coefficients
 sigma_rg <- summary(es_reg)$cov.scaled #save the covariance matrix
 betahat_rg <- betahat_rg[1:20]
@@ -597,8 +540,10 @@ rgplot <- rgplot + theme(text = element_text(family = "Crimson Text", size = 11)
 ggsave(
   filename = here::here("plots/similarity_rg.png"), device = "png", limitsize = FALSE, dpi = 300, plot = rgplot, width =5, height = 3, units = "in"
   )
-
-# interactive
+#-------------------------------------------------------------------------------
+# plotting leads & lags
+#-------------------------------------------------------------------------------
+# interactive term
 es_regdat_fpsi <- es_regdat[30:49,]
 es_regdat_fpsi$tau = -9:10
 es_regdat_fpsi$Est = es_regdat_fpsi$Estimate-es_regdat_fpsi$Estimate[es_regdat_fpsi$tau==0]
@@ -621,7 +566,9 @@ ggplot(data = es_regdat_fpsi, aes(x = tau, y = Est)) +
   geom_smooth(data = subset(es_regdat_fpsi, tau < -1), se = TRUE) + 
   geom_smooth(data = subset(es_regdat_fpsi, tau >= -1), se = TRUE)
 ggsave(filename = here::here("plots/leadslags_fpsi.png"), device = "png", width =5, height = 3, units = "in", limitsize = FALSE, dpi = 300)
-
+#-------------------------------------------------------------------------------
+# Sensitivity Test for FPSI
+#-------------------------------------------------------------------------------
 betahat_fpsi <- summary(es_reg)$coefficients #save the coefficients
 sigma_fpsi <- summary(es_reg)$cov.scaled #save the covariance matrix
 betahat_fpsi <- betahat_fpsi[30:49]
@@ -648,46 +595,6 @@ fpsiplot <- fpsiplot + theme(text = element_text(family = "Crimson Text", size =
 ggsave(
   filename = here::here("plots/similarity_fpsi.png"), device = "png", limitsize = FALSE, dpi = 300, plot = rgplot, width =5, height = 3, units = "in"
   )
-
-```
-
-```{r San & Ann DiD}
-dyadyrs$id <- as.numeric(dyadyrs$id)
-dyadyrs$ccode1 <- as.numeric(dyadyrs$ccode1)
-dyadyrs$ccode2 <- as.numeric(dyadyrs$ccode2)
-
-#dyadyrs %>%
-#  drop_na(regcha_uni, ongoingrivalry, alliance, major,
-#          mindist, trade_dyd, gdppc_dyd, nmc_dyd)
-
-example_attgt <- att_gt(yname = "cowmidonset",
-                        tname = "year",
-                        idname = "id",
-                        gname = "treatyr_sing",
-                        xformla = ~1,
-                        data = dyadyrs,
-                        base_period = "universal"
-                        )
-example_attgt.dyn <- aggte(example_attgt, type = "dynamic", na.rm = TRUE, 
-                           min_e = -10, max_e = 10)
-# summarize the results
-summary(example_attgt.dyn)
-ggdid(example_attgt.dyn) + theme(text = element_text(family = "Crimson Text", size = 11))
-ggsave(filename = here::here("plots/sanann.png"), device = "png", limitsize = FALSE, dpi = 300)
-
-
-
-
-
-
-sensitivity_results <-
-  honest_did(example_attgt.dyn,
-             e=0,
-             type="relative_magnitude",
-             Mbarvec=seq(from = 0.5, to = 2, by = 0.5))
-
-HonestDiD::createSensitivityPlot_relativeMagnitudes(sensitivity_results$robust_ci,
-                                                    sensitivity_results$orig_ci)
 
 ```
 
