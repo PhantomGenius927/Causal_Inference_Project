@@ -610,5 +610,8 @@ media_test <- feols(c(alliance,
                       gdppc_dyd, trade_dyd, nmc_dyd) ~ regcha_uni | 
                       year + ccode1 + ccode2, data = dyadyrs)
 etable(media_test)
-# stevemisc::show_ranef(media_test)
+```
+
+```{r}
+print("GOOD LUCK")
 ```
